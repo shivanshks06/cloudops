@@ -108,6 +108,7 @@ services:
     build:
       context: ./jenkins
     container_name: cloudops-jenkins
+    user: root
     ports:
       - "8082:8080"
       - "50000:50000"
