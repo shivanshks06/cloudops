@@ -24,7 +24,7 @@ pipeline {
                 sh 'node --version'
                 sh 'npm --version'
                 sh 'docker --version'
-                sh 'docker compose version'
+                sh 'docker-compose --version'
             }
         }
 
@@ -62,7 +62,7 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker compose -f ${COMPOSE_FILE} build'
+                sh 'docker-compose -f ${COMPOSE_FILE} build'
             }
         }
 
