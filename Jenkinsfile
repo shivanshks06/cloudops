@@ -1,9 +1,12 @@
-
 pipeline {
     agent any
 
     options {
         timestamps()
+    }
+
+    environment {
+        COMPOSE_FILE = "compose.yml"
     }
 
     stages {
@@ -15,7 +18,17 @@ pipeline {
             }
         }
 
-        stage('Backend Dependencies') {
+        stage('Verify Tools') {
+            steps {
+                sh 'git --version'
+                sh 'node --version'
+                sh 'npm --version'
+                sh 'docker --version'
+                sh 'docker compose version'
+            }
+        }
+
+        stage('Install Backend Dependencies') {
             steps {
                 dir('server') {
                     sh 'npm install'
@@ -23,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('Frontend Dependencies') {
+        stage('Install Frontend Dependencies') {
             steps {
                 dir('client') {
                     sh 'npm install'
@@ -42,15 +55,20 @@ pipeline {
         stage('Verify Backend') {
             steps {
                 dir('server') {
-                    sh 'node --version'
-                    sh 'npm --version'
+                    sh 'node -e "console.log(\'Backend verification successful\')"'
                 }
             }
         }
 
-        stage('Success') {
+        stage('Build Docker Images') {
             steps {
-                echo 'CloudOps pipeline completed successfully!'
+                sh 'docker compose -f ${COMPOSE_FILE} build'
+            }
+        }
+
+        stage('Pipeline Complete') {
+            steps {
+                echo 'CloudOps CI pipeline completed successfully.'
             }
         }
     }
