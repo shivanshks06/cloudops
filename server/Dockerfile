@@ -24,4 +24,4 @@ EXPOSE 5000
 
 USER node
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npm run migrate up && node server.js"]

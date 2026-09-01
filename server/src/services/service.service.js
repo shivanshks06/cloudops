@@ -12,8 +12,13 @@ const createService = async (data) => {
     return await serviceRepository.create(data);
 };
 
+const deleteById = async (id) => {
+    return await serviceRepository.deleteById(id);
+};
+
 module.exports = {
     getAllServices,
     getServiceById,
     createService,
+    deleteById,
 };

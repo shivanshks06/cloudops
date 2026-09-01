@@ -52,49 +52,67 @@
   }
 }
 
+@theme {
+  --color-slate-950: var(--tw-slate-950);
+  --color-slate-900: var(--tw-slate-900);
+  --color-slate-800: var(--tw-slate-800);
+  --color-slate-700: var(--tw-slate-700);
+  --color-slate-600: var(--tw-slate-600);
+  --color-slate-500: var(--tw-slate-500);
+  --color-slate-400: var(--tw-slate-400);
+  --color-slate-300: var(--tw-slate-300);
+  --color-slate-200: var(--tw-slate-200);
+  --color-slate-100: var(--tw-slate-100);
+  --color-slate-50: var(--tw-slate-50);
+  --color-white: var(--tw-white);
+}
+
+:root {
+  /* Default Dark Mode (Original Slate Palette) */
+  --tw-slate-950: #020617;
+  --tw-slate-900: #0f172a;
+  --tw-slate-800: #1e293b;
+  --tw-slate-700: #334155;
+  --tw-slate-600: #475569;
+  --tw-slate-500: #64748b;
+  --tw-slate-400: #94a3b8;
+  --tw-slate-300: #cbd5e1;
+  --tw-slate-200: #e2e8f0;
+  --tw-slate-100: #f1f5f9;
+  --tw-slate-50: #f8fafc;
+  --tw-white: #ffffff;
+}
+
+:root.light-theme {
+  /* Beautiful Elegant Light Theme */
+  --tw-slate-950: #f8fafc; 
+  --tw-slate-900: #f0f4f8; /* Soft blue-grey background */
+  --tw-slate-800: #ffffff; /* Crisp white cards */
+  --tw-slate-700: #d9e2ec; /* Borders */
+  --tw-slate-600: #bcccdc; /* Subtle borders */
+  --tw-slate-500: #829ab1; /* Muted text */
+  --tw-slate-400: #627d98; /* Secondary text */
+  --tw-slate-300: #486581; /* Primary text */
+  --tw-slate-200: #334e68; /* Emphasized text */
+  --tw-slate-100: #243b53; 
+  --tw-slate-50: #102a43;
+  --tw-white: #102a43; /* text-white becomes very dark blue */
+}
+
 body {
   margin: 0;
+  background-color: var(--tw-slate-900);
+  color: var(--tw-slate-50);
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  min-height: 100vh;
+  width: 100%;
 }
 
 h1,
 h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+  font-family: var(--sans);
 }
 
 code,
