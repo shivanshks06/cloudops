@@ -119,6 +119,7 @@ pipeline {
                 sh '''
                     cd /workspace/cloudops
 
+                    HOST_PROJECT_PATH="/mnt/c/Users/shiva/OneDrive/Desktop/Mini Project/cloudops" \
                     docker compose \
                       --project-name cloudops \
                       --file compose.app.yml \
