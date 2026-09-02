@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        COMPOSE_FILE = "compose.yml"
+        DOCKERHUB_USER = "shivanshks06"
     }
 
     stages {
@@ -20,11 +20,13 @@ pipeline {
 
         stage('Verify Tools') {
             steps {
-                sh 'git --version'
-                sh 'node --version'
-                sh 'npm --version'
-                sh 'docker --version'
-                sh 'docker-compose --version'
+                sh '''
+                    git --version
+                    node --version
+                    npm --version
+                    docker --version
+                    docker-compose --version
+                '''
             }
         }
 
@@ -60,30 +62,64 @@ pipeline {
             }
         }
 
+        stage('Docker Hub Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Images') {
             steps {
-                sh 'docker-compose -f ${COMPOSE_FILE} build'
+                sh '''
+                    docker build -t ${DOCKERHUB_USER}/cloudops-api:${BUILD_NUMBER} -t ${DOCKERHUB_USER}/cloudops-api:latest ./server
+
+                    docker build -t ${DOCKERHUB_USER}/cloudops-client:${BUILD_NUMBER} -t ${DOCKERHUB_USER}/cloudops-client:latest ./client
+                '''
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                sh '''
+                    docker push ${DOCKERHUB_USER}/cloudops-api:${BUILD_NUMBER}
+                    docker push ${DOCKERHUB_USER}/cloudops-api:latest
+
+                    docker push ${DOCKERHUB_USER}/cloudops-client:${BUILD_NUMBER}
+                    docker push ${DOCKERHUB_USER}/cloudops-client:latest
+                '''
             }
         }
 
         stage('Pipeline Complete') {
             steps {
-                echo 'CloudOps CI pipeline completed successfully.'
+                echo "CloudOps CI pipeline completed successfully!"
             }
         }
     }
 
     post {
+
         success {
-            echo 'Build SUCCESS'
+            echo "Build SUCCESS"
         }
 
         failure {
-            echo 'Build FAILED'
+            echo "Build FAILED"
         }
 
         always {
-            echo 'Pipeline finished'
+            sh 'docker logout || true'
+            echo "Pipeline finished"
         }
     }
 }
