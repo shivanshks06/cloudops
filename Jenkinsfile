@@ -3,17 +3,22 @@ pipeline {
 
     options {
         timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
     environment {
         DOCKERHUB_USER = "shivanshks06"
+        API_IMAGE = "shivanshks06/cloudops-api"
+        CLIENT_IMAGE = "shivanshks06/cloudops-client"
+        COMPOSE_FILE = "compose.yml"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo 'Cloning CloudOps repository...'
+                echo "Checking out latest CloudOps code..."
                 checkout scm
             }
         }
@@ -21,6 +26,7 @@ pipeline {
         stage('Verify Tools') {
             steps {
                 sh '''
+                    echo "===== Tool Versions ====="
                     git --version
                     node --version
                     npm --version
@@ -57,7 +63,9 @@ pipeline {
         stage('Verify Backend') {
             steps {
                 dir('server') {
-                    sh 'node -e "console.log(\'Backend verification successful\')"'
+                    sh '''
+                        node -e "console.log('Backend verification successful')"
+                    '''
                 }
             }
         }
@@ -81,9 +89,15 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 sh '''
-                    docker build -t ${DOCKERHUB_USER}/cloudops-api:${BUILD_NUMBER} -t ${DOCKERHUB_USER}/cloudops-api:latest ./server
+                    docker build \
+                      -t ${API_IMAGE}:${BUILD_NUMBER} \
+                      -t ${API_IMAGE}:latest \
+                      ./server
 
-                    docker build -t ${DOCKERHUB_USER}/cloudops-client:${BUILD_NUMBER} -t ${DOCKERHUB_USER}/cloudops-client:latest ./client
+                    docker build \
+                      -t ${CLIENT_IMAGE}:${BUILD_NUMBER} \
+                      -t ${CLIENT_IMAGE}:latest \
+                      ./client
                 '''
             }
         }
@@ -91,18 +105,35 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 sh '''
-                    docker push ${DOCKERHUB_USER}/cloudops-api:${BUILD_NUMBER}
-                    docker push ${DOCKERHUB_USER}/cloudops-api:latest
+                    docker push ${API_IMAGE}:${BUILD_NUMBER}
+                    docker push ${API_IMAGE}:latest
 
-                    docker push ${DOCKERHUB_USER}/cloudops-client:${BUILD_NUMBER}
-                    docker push ${DOCKERHUB_USER}/cloudops-client:latest
+                    docker push ${CLIENT_IMAGE}:${BUILD_NUMBER}
+                    docker push ${CLIENT_IMAGE}:latest
+                '''
+            }
+        }
+
+        stage('Deploy CloudOps') {
+            steps {
+                sh '''
+                    docker-compose -f ${COMPOSE_FILE} pull || true
+                    docker-compose -f ${COMPOSE_FILE} up -d --build
+                '''
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh '''
+                    docker image prune -f || true
                 '''
             }
         }
 
         stage('Pipeline Complete') {
             steps {
-                echo "CloudOps CI pipeline completed successfully!"
+                echo "CloudOps CI/CD pipeline completed successfully!"
             }
         }
     }
@@ -110,16 +141,16 @@ pipeline {
     post {
 
         success {
-            echo "Build SUCCESS"
+            echo "Build #${BUILD_NUMBER} SUCCESS"
         }
 
         failure {
-            echo "Build FAILED"
+            echo "Build #${BUILD_NUMBER} FAILED"
         }
 
         always {
             sh 'docker logout || true'
-            echo "Pipeline finished"
+            echo "Pipeline finished."
         }
     }
 }
