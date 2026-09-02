@@ -117,8 +117,10 @@ pipeline {
         stage('Deploy CloudOps') {
             steps {
                 sh '''
-                    docker-compose -f ${COMPOSE_FILE} pull || true
-                    docker-compose -f ${COMPOSE_FILE} up -d --build
+                    docker compose \
+                      --project-name cloudops \
+                      -f compose.app.yml \
+                      up -d --build
                 '''
             }
         }
