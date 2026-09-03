@@ -3,10 +3,11 @@ FROM jenkins/jenkins:lts
 USER root
 
 RUN apt-get update && \
-    apt-get install -y curl git ca-certificates gnupg lsb-release && \
+    apt-get install -y curl git docker.io docker-compose && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs docker.io docker-compose && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y nodejs && \
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    install -m 0755 kubectl /usr/local/bin/kubectl && \
+    rm kubectl
 
 USER jenkins
