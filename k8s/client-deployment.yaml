@@ -29,7 +29,11 @@ spec:
           imagePullPolicy: Always
 
           ports:
-            - containerPort: 80
+            - containerPort: 5173
+
+          env:
+            - name: VITE_API_URL
+              value: /api
 
 ---
 apiVersion: v1
@@ -45,4 +49,4 @@ spec:
 
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 5173
