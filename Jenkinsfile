@@ -31,7 +31,7 @@ pipeline {
                     node --version
                     npm --version
                     docker --version
-                    docker-compose --version
+                    docker compose version
                 '''
             }
         }
@@ -116,11 +116,24 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    kubectl apply -k k8s/
-                    kubectl rollout status deployment/cloudops-api -n cloudops
-                    kubectl rollout status deployment/cloudops-client -n cloudops
-                '''
+                withCredentials([
+                    file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
+                ]) {
+                    sh '''
+                        export KUBECONFIG=$KUBECONFIG_FILE
+
+                        kubectl apply -k k8s/
+
+                        kubectl set image deployment/cloudops-api \
+                          cloudops-api=shivanshks06/cloudops-api:${BUILD_NUMBER} -n cloudops
+
+                        kubectl set image deployment/cloudops-client \
+                          cloudops-client=shivanshks06/cloudops-client:${BUILD_NUMBER} -n cloudops
+
+                        kubectl rollout status deployment/cloudops-api -n cloudops
+                        kubectl rollout status deployment/cloudops-client -n cloudops
+                    '''
+                }
             }
         }
 
@@ -147,6 +160,15 @@ pipeline {
 
         failure {
             echo "Build #${BUILD_NUMBER} FAILED"
+            withCredentials([
+                file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
+            ]) {
+                sh '''
+                    export KUBECONFIG=$KUBECONFIG_FILE || true
+                    kubectl rollout undo deployment/cloudops-api -n cloudops || true
+                    kubectl rollout undo deployment/cloudops-client -n cloudops || true
+                '''
+            }
         }
 
         always {
