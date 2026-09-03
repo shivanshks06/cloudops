@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: cloudops-api
+  namespace: cloudops
+
+spec:
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      app: cloudops-api
+
+  template:
+    metadata:
+      labels:
+        app: cloudops-api
+
+    spec:
+      containers:
+        - name: api
+
+          image: shivanshks06/cloudops-api:latest
+
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5000
+
+          envFrom:
+            - configMapRef:
+                name: cloudops-config
+            - secretRef:
+                name: cloudops-secret
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudops-api-service
+  namespace: cloudops
+
+spec:
+  selector:
+    app: cloudops-api
+
+  ports:
+    - port: 5000
+      targetPort: 5000

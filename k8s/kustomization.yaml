@@ -1,0 +1,10 @@
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - postgres-pvc.yaml
+  - postgres-deployment.yaml
+  - api-deployment.yaml
+  - client-deployment.yaml
+  - ingress.yaml
+  - hpa-api.yaml

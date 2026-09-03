@@ -114,16 +114,12 @@ pipeline {
             }
         }
 
-        stage('Deploy CloudOps') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                    cd /workspace/cloudops
-
-                    HOST_PROJECT_PATH="/mnt/c/Users/shiva/OneDrive/Desktop/Mini Project/cloudops" \
-                    docker compose \
-                      --project-name cloudops \
-                      --file compose.app.yml \
-                      up -d --build
+                    kubectl apply -k k8s/
+                    kubectl rollout status deployment/cloudops-api -n cloudops
+                    kubectl rollout status deployment/cloudops-client -n cloudops
                 '''
             }
         }
