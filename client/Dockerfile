@@ -12,8 +12,22 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Configure Nginx to listen on port 5173 and support SPA routing (client-side router fallback)
-RUN echo 'server { listen 5173; location / { root /usr/share/nginx/html; index index.html; try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+# Create Nginx configuration with API reverse proxy and SPA routing fallback
+RUN printf 'server {\n\
+    listen 5173;\n\
+    location /api/ {\n\
+        proxy_pass http://cloudops-api-service:5000/api/;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+    }\n\
+    location / {\n\
+        root /usr/share/nginx/html;\n\
+        index index.html;\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+}\n' > /etc/nginx/conf.d/default.conf
 
 # Copy compiled static assets
 COPY --from=build /app/dist /usr/share/nginx/html
