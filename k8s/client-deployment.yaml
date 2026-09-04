@@ -22,7 +22,7 @@ spec:
 
     spec:
       containers:
-        - name: client
+        - name: cloudops-client
 
           image: shivanshks06/cloudops-client:latest
 

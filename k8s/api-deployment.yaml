@@ -22,7 +22,7 @@ spec:
 
     spec:
       containers:
-        - name: api
+        - name: cloudops-api
 
           image: shivanshks06/cloudops-api:latest
 
