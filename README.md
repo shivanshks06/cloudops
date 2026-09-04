@@ -66,7 +66,7 @@ flowchart TD
 
 ---
 
-## 🐣 Zero-Prerequisite Setup Guide (Fresh PC / Mac / Linux)
+## 🐣 Setup Guide (PC / Mac / Linux)
 
 If you are setting up this project on a brand new computer with **no tools installed** (no Docker, no WSL, no Git, no Node.js), follow these step-by-step instructions.
 
