@@ -9,7 +9,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [services, setServices] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  
+
   const profileRef = useRef(null);
   const searchRef = useRef(null);
 
@@ -43,12 +43,12 @@ export default function Navbar() {
 
   const filteredServices = searchQuery.trim()
     ? services.filter(
-        (s) =>
-          s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.environment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.endpoint_url?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      (s) =>
+        s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.environment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.endpoint_url?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : [];
 
   const handleSelectService = (serviceId) => {
@@ -84,7 +84,7 @@ export default function Navbar() {
             className="bg-transparent outline-none text-white w-full placeholder-slate-500 text-sm"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery("")}
               className="text-slate-500 hover:text-slate-300 transition"
             >
@@ -124,13 +124,12 @@ export default function Navbar() {
                     </div>
 
                     <span
-                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${
-                        service.environment === "production"
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 ${service.environment === "production"
                           ? "bg-red-500/10 text-red-400 border border-red-500/20"
                           : service.environment === "staging"
-                          ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      }`}
+                            ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        }`}
                     >
                       {service.environment}
                     </span>
@@ -148,7 +147,7 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4 relative" ref={profileRef}>
         {/* Bell Icon - Opens Alerts page */}
-        <button 
+        <button
           onClick={() => navigate("/alerts")}
           title="View Alerts"
           className="relative p-2 rounded-xl bg-slate-900/40 border border-slate-800/50 hover:bg-slate-900 hover:border-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
@@ -159,14 +158,13 @@ export default function Navbar() {
         </button>
 
         {/* Profile Icon - Opens Interactive Profile Dropdown */}
-        <button 
+        <button
           onClick={() => setIsProfileOpen(!isProfileOpen)}
           title="User Profile"
-          className={`p-2 rounded-xl border transition cursor-pointer ${
-            isProfileOpen 
-              ? "bg-blue-600/20 border-blue-500 text-blue-400" 
+          className={`p-2 rounded-xl border transition cursor-pointer ${isProfileOpen
+              ? "bg-blue-600/20 border-blue-500 text-blue-400"
               : "bg-slate-900/40 border-slate-800/50 hover:bg-slate-900 hover:border-slate-800 text-slate-300 hover:text-white"
-          }`}
+            }`}
         >
           <CircleUser size={18} />
         </button>
@@ -176,11 +174,11 @@ export default function Navbar() {
           <div className="absolute right-0 top-14 w-72 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-base shadow-lg shadow-blue-500/20">
-                S
+                A
               </div>
               <div className="overflow-hidden">
-                <h4 className="text-sm font-bold text-white truncate">Shivansh</h4>
-                <p className="text-xs text-slate-400 truncate">shivansh@cloudops.dev</p>
+                <h4 className="text-sm font-bold text-white truncate">SRE Admin</h4>
+                <p className="text-xs text-slate-400 truncate">admin@cloudops.dev</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                   <span className="text-[10px] text-emerald-400 font-semibold tracking-wide uppercase">Lead SRE Admin</span>
@@ -189,7 +187,7 @@ export default function Navbar() {
             </div>
 
             <div className="py-2 space-y-1">
-              <button 
+              <button
                 onClick={() => {
                   navigate("/settings");
                   setIsProfileOpen(false);
@@ -200,7 +198,7 @@ export default function Navbar() {
                 Workspace Settings
               </button>
 
-              <button 
+              <button
                 onClick={() => {
                   navigate("/alerts");
                   setIsProfileOpen(false);
@@ -211,7 +209,7 @@ export default function Navbar() {
                 System Alerts
               </button>
 
-              <button 
+              <button
                 onClick={() => {
                   navigate("/metrics");
                   setIsProfileOpen(false);
@@ -224,7 +222,7 @@ export default function Navbar() {
             </div>
 
             <div className="pt-2 border-t border-slate-800">
-              <button 
+              <button
                 onClick={() => {
                   setIsProfileOpen(false);
                   alert("SRE Admin Session Locked");
@@ -240,4 +238,4 @@ export default function Navbar() {
       </div>
     </header>
   );
-}
+}
