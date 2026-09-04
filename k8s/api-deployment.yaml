@@ -71,9 +71,12 @@ metadata:
   namespace: cloudops
 
 spec:
+  type: NodePort
+
   selector:
     app: cloudops-api
 
   ports:
     - port: 5000
       targetPort: 5000
+      nodePort: 30090

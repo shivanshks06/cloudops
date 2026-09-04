@@ -16,7 +16,7 @@ FROM nginx:alpine
 RUN printf 'server {\n\
     listen 5173;\n\
     location /api/ {\n\
-        proxy_pass http://cloudops-api-service:5000/api/;\n\
+        proxy_pass http://api:5000/api/;\n\
         proxy_http_version 1.1;\n\
         proxy_set_header Host $host;\n\
         proxy_set_header X-Real-IP $remote_addr;\n\

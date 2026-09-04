@@ -1,18 +1,18 @@
 # 🚀 CloudOps - Observability & SRE Incident Management Platform
 
-CloudOps is an enterprise-grade SRE (Site Reliability Engineering) observability dashboard and incident management platform. It includes real-time health metrics, automated chaos testing endpoints, Prometheus/Grafana monitoring, a multi-container Docker Compose setup, Kubernetes manifests with HPA auto-scaling, and a Jenkins CI/CD pipeline with automated zero-downtime rollouts and failure rollbacks.
+CloudOps is an enterprise-grade SRE (Site Reliability Engineering) observability dashboard and incident management platform. It includes real-time health metrics, automated chaos testing endpoints, Prometheus/Grafana monitoring with auto-provisioned dashboards, a multi-container Docker Compose architecture, Kubernetes manifests with HPA auto-scaling, and a full Jenkins CI/CD pipeline with automated zero-downtime rollouts and failure rollbacks.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
 - **Frontend**: React 18, Vite, Tailwind CSS / Vanilla CSS, Lucide Icons
-- **Backend**: Node.js, Express.js, PostgreSQL (`pg`), Zod validation
-- **Database**: PostgreSQL 17 (with automated migration runner)
-- **Monitoring & Metrics**: Prometheus, Grafana, Node Exporter
+- **Backend**: Node.js, Express.js, PostgreSQL (`pg`), `prom-client` telemetry metrics
+- **Database**: PostgreSQL 17 (with automated `node-pg-migrate` execution)
+- **Monitoring & Observability**: Prometheus, Grafana (with auto-provisioned Prometheus datasource & JSON dashboards), Node Exporter
 - **Containerization**: Docker & Docker Compose
 - **Orchestration**: Kubernetes (Kind / Minikube) with Kustomize, HPA, Ingress, and PVC
-- **CI/CD Pipeline**: Jenkins (Automated Docker Hub push, Kubernetes rollout, and rollback on failure)
+- **CI/CD Pipeline**: Jenkins (Automated build, test, Docker Hub push, Kubernetes rollout/rollback, and health validation)
 
 ```mermaid
 flowchart TD
@@ -56,11 +56,12 @@ flowchart TD
 | Service Name | Container Port | Host Port | Description |
 |---|---|---|---|
 | **CloudOps Client** | `5173` | `http://localhost:5173` | Frontend SRE Dashboard |
-| **CloudOps API** | `5000` | `http://localhost:5000` | Backend REST API & Metrics |
-| **Nginx Gateway** | `80` | `http://localhost:8081` | Reverse Proxy Endpoint |
+| **CloudOps API** | `5000` | `http://localhost:5000` | Backend REST API & Telemetry (`/health`, `/metrics`) |
+| **Nginx Gateway** | `80` | `http://localhost:8081` | Reverse Proxy Entry Endpoint |
 | **PostgreSQL DB** | `5432` | `localhost:5432` | Primary Database |
-| **Prometheus** | `9090` | `http://localhost:9090` | Metrics Scraper & Storage |
-| **Grafana** | `3000` | `http://localhost:3001` | Data Visualization (admin/admin) |
+| **Prometheus** | `9090` | `http://localhost:9090` | Telemetry Metrics Scraper |
+| **Grafana** | `3000` | `http://localhost:3001` | Provisioned Dashboards (`admin`/`admin`) |
+| **Node Exporter** | `9100` | `http://localhost:9100` | System Metrics Exporter |
 | **Jenkins CI/CD** | `8080` | `http://localhost:8082` | Continuous Delivery Server |
 
 ---
@@ -79,7 +80,7 @@ Before running the project on a new computer, ensure you have installed:
 
 ## 🚀 Option 1: Quick Start with Docker Compose (Recommended)
 
-Run the entire platform (Client, API, Database, Nginx, Prometheus, Grafana, Node Exporter, Jenkins) with a single command.
+Run the entire platform (Client, API, Database, Nginx, Prometheus, Grafana, Node Exporter, Jenkins) with a single command:
 
 ### 1. Clone the repository
 ```bash
@@ -94,13 +95,14 @@ docker compose up -d --build
 
 ### 3. Verify running containers
 ```bash
-docker compose ps
+docker ps
 ```
 
 ### 4. Access the platform
 - **Frontend Dashboard**: [http://localhost:5173](http://localhost:5173) or [http://localhost:8081](http://localhost:8081)
 - **API Health Check**: [http://localhost:5000/health](http://localhost:5000/health)
-- **Prometheus Metrics**: [http://localhost:9090](http://localhost:9090)
+- **Prometheus Metrics**: [http://localhost:5000/metrics](http://localhost:5000/metrics)
+- **Prometheus Scraper**: [http://localhost:9090](http://localhost:9090)
 - **Grafana Dashboards**: [http://localhost:3001](http://localhost:3001) *(Login: `admin` / `admin`)*
 - **Jenkins CI/CD**: [http://localhost:8082](http://localhost:8082)
 
@@ -173,7 +175,7 @@ The project includes a production-grade declarative `Jenkinsfile` that automates
 ### 1. Access Jenkins
 Open [http://localhost:8082](http://localhost:8082) in your browser.
 
-### 2. Configure Credentials in Jenkins
+### 2. Configure Credentials in Jenkins (Optional)
 Go to **Manage Jenkins** -> **Credentials** -> **System** -> **Global credentials**:
 - **Docker Hub Credentials**:
   - **Kind**: `Username with password`
@@ -184,28 +186,32 @@ Go to **Manage Jenkins** -> **Credentials** -> **System** -> **Global credential
   - **ID**: `kubeconfig`
   - **File**: Upload your cluster's `kubeconfig` file.
 
-> **Note for Kind/Docker-in-Docker users**: If Jenkins is running inside a Docker container, attach the Jenkins container to your Kind network so it can communicate with the cluster control plane:
-> ```bash
-> docker network connect kind cloudops-jenkins
-> ```
-
 ### 3. Pipeline Stages
 1. **Checkout**: Pulls latest repository code.
 2. **Verify Tools**: Validates Git, Node, Docker, and Docker Compose versions.
 3. **Dependencies & React Build**: Installs node modules and builds frontend assets.
-4. **Docker Hub Login & Build**: Builds tagged images (`cloudops-api:BUILD_NUMBER` & `cloudops-client:BUILD_NUMBER`).
-5. **Push Images**: Pushes tagged & `latest` images to Docker Hub.
-6. **Deploy to Kubernetes**: Applies manifests and updates container images via `kubectl set image`.
-7. **Rollout Verification**: Monitors `kubectl rollout status`.
-8. **Automated Rollback**: Triggers `kubectl rollout undo` if deployment or verification fails.
+4. **Backend Verification**: Syntax and structural checks.
+5. **Docker Build & Push**: Builds tagged images (`cloudops-api:BUILD_NUMBER` & `cloudops-client:BUILD_NUMBER`) and pushes to Docker Hub.
+6. **Deploy Application**: Applies Kubernetes manifests or updates Docker Compose services.
+7. **Health Verification**: Runs end-to-end HTTP health checks (`/health`).
+8. **Automated Rollback**: Triggers `kubectl rollout undo` if deployment or health verification fails.
+
+---
+
+## 📈 Observability & Grafana Dashboard Provisioning
+
+Grafana is pre-configured with auto-provisioned datasources and dashboards:
+- **Datasource Config**: `monitoring/grafana/provisioning/datasources/datasource.yml` (Connects Grafana directly to `http://prometheus:9090`).
+- **Dashboard JSON**: `monitoring/grafana/provisioning/dashboards/cloudops-dashboard.json` (Pre-loads dashboard `adj2xlj` featuring Total Services, Active Alerts, Active Incidents, and Service Response Time).
+- **Anonymous Embedding**: Enabled (`GF_AUTH_ANONYMOUS_ENABLED=true`, `GF_SECURITY_ALLOW_EMBEDDING=true`) for seamless iframe viewing in the React frontend.
 
 ---
 
 ## 🔧 Troubleshooting
 
 - **Database Connection Failure**: Ensure the database health check passes. Run `docker compose logs db` to inspect PostgreSQL logs.
-- **Jenkins cannot reach Kubernetes**: Ensure `server` URL in `kubeconfig` uses `https://cloudops-control-plane:6443` or `https://host.docker.internal:<port>` depending on your container setup, and verify network connectivity with `docker network connect kind cloudops-jenkins`.
-- **Port Conflict**: If port `5000`, `5173`, `8081`, `5432`, `9090`, or `8082` is already in use on your system, update the host port mappings in `compose.yml`.
+- **Jenkins cannot reach Kubernetes**: Ensure `server` URL in `kubeconfig` uses `https://cloudops-control-plane:6443` or `https://host.docker.internal:<port>` depending on your container setup.
+- **Port Conflict**: If port `5000`, `5173`, `8081`, `5432`, `9090`, `3001`, or `8082` is already in use on your system, update the host port mappings in `compose.yml`.
 
 ---
 

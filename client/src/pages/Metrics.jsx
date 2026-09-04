@@ -197,22 +197,22 @@ export default function Metrics() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <GrafanaPanel
             title="Total Services"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=panel-1"
+            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=1"
           />
 
           <GrafanaPanel
             title="Active Alerts"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=panel-2"
+            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=2"
           />
 
           <GrafanaPanel
             title="Active Incidents"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=panel-3"
+            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=3"
           />
 
           <GrafanaPanel
             title="Response Time"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=panel-4"
+            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=4"
           />
         </div>
       </div>

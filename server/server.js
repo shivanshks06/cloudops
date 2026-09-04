@@ -21,11 +21,41 @@ const startServer = async () => {
             res.end(await register.metrics());
         });
 
+        const serviceRepository = require("./src/repositories/service.repository");
+        const countRes = await pool.query("SELECT COUNT(*) FROM services");
+        if (parseInt(countRes.rows[0].count, 10) === 0) {
+            console.log("Seeding default services for telemetry metrics...");
+            await serviceRepository.create({
+                name: "User Authentication API",
+                description: "Handles user auth & JWT tokens",
+                environment: "production",
+                endpoint_url: "http://api:5000/health"
+            });
+            await serviceRepository.create({
+                name: "Payment Gateway",
+                description: "Processes billing and transactions",
+                environment: "production",
+                endpoint_url: "http://api:5000/health"
+            });
+            await serviceRepository.create({
+                name: "Notification Engine",
+                description: "Sends push notifications and emails",
+                environment: "staging",
+                endpoint_url: "http://api:5000/health"
+            });
+            await serviceRepository.create({
+                name: "Search & Analytics",
+                description: "Elasticsearch indexer",
+                environment: "development",
+                endpoint_url: "http://api:5000/health"
+            });
+        }
+
         // Run health check job every 30 seconds
         setInterval(checkServicesHealth, 30000);
         
         // Run health check immediately on startup
-        checkServicesHealth().catch(err => {
+        await checkServicesHealth().catch(err => {
             console.error("Initial health check failed:", err.message);
         });
         
