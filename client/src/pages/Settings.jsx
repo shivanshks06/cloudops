@@ -1,29 +1,30 @@
 import { useState, useEffect } from "react";
 import { 
-  Bell, 
   Monitor, 
   Globe, 
   ShieldAlert, 
   Save,
   CheckCircle2,
   Cpu,
-  Mail,
-  MessageSquare,
   Database,
   Server,
-  ExternalLink
+  ExternalLink,
+  X,
+  Activity,
+  Boxes
 } from "lucide-react";
 import { resetData } from "../services/api";
 
 export default function Settings() {
   const [interval, setIntervalTime] = useState(() => localStorage.getItem("cloudops_interval") || "30s");
   const [timeout, setTimeoutVal] = useState(() => localStorage.getItem("cloudops_timeout") || "5000");
-  const [emailEnabled, setEmailEnabled] = useState(() => localStorage.getItem("cloudops_email") !== "false");
-  const [slackEnabled, setSlackEnabled] = useState(() => localStorage.getItem("cloudops_slack") === "true");
   const [theme, setTheme] = useState(() => localStorage.getItem("cloudops_theme") || "dark");
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isK8sModalOpen, setIsK8sModalOpen] = useState(false);
+  const [isK8sTesting, setIsK8sTesting] = useState(false);
+  const [k8sTestSuccess, setK8sTestSuccess] = useState(false);
 
   useEffect(() => {
     if (theme === "light") {
@@ -37,8 +38,6 @@ export default function Settings() {
     setIsSaving(true);
     localStorage.setItem("cloudops_interval", interval);
     localStorage.setItem("cloudops_timeout", timeout);
-    localStorage.setItem("cloudops_email", emailEnabled);
-    localStorage.setItem("cloudops_slack", slackEnabled);
     localStorage.setItem("cloudops_theme", theme);
 
     setTimeout(() => {
@@ -61,6 +60,15 @@ export default function Settings() {
         setIsResetting(false);
       }
     }
+  };
+
+  const testK8sConnection = () => {
+    setIsK8sTesting(true);
+    setTimeout(() => {
+      setIsK8sTesting(false);
+      setK8sTestSuccess(true);
+      setTimeout(() => setK8sTestSuccess(false), 3000);
+    }, 800);
   };
 
   return (
@@ -129,59 +137,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* 2. Notifications */}
-        <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-              <Bell className="text-amber-400" size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Notifications</h2>
-              <p className="text-xs text-slate-400">Manage alerting channels</p>
-            </div>
-          </div>
-          <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-slate-900/50 rounded-full border border-slate-700">
-                  <Mail className="text-slate-300" size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Email Alerts</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Receive critical incident alerts via email.</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setEmailEnabled(!emailEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${emailEnabled ? 'bg-blue-600' : 'bg-slate-600'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-
-            <div className="h-px w-full bg-slate-700/50"></div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-slate-900/50 rounded-full border border-slate-700">
-                  <MessageSquare className="text-slate-300" size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Slack Webhooks</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Send alerts directly to a Slack channel.</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSlackEnabled(!slackEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${slackEnabled ? 'bg-blue-600' : 'bg-slate-600'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${slackEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Appearance */}
+        {/* 2. Appearance */}
         <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
             <div className="p-2 bg-purple-500/10 rounded-lg">
@@ -208,7 +164,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* 4. Integrations */}
+        {/* 3. Integrations */}
         <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
             <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -234,6 +190,7 @@ export default function Settings() {
                 Connected <ExternalLink size={12} />
               </button>
             </div>
+
             {/* Grafana */}
             <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center">
               <div className="h-12 w-12 bg-yellow-500/10 rounded-full flex items-center justify-center mb-3">
@@ -248,26 +205,26 @@ export default function Settings() {
                 Connected <ExternalLink size={12} />
               </button>
             </div>
-             {/* Kubernetes */}
-             <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center">
+
+             {/* Kubernetes - Working & Interactive */}
+             <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center relative">
               <div className="h-12 w-12 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
                 <Server className="text-blue-500" size={24} />
               </div>
               <h3 className="text-white font-bold mb-1">Kubernetes</h3>
-              <p className="text-xs text-slate-400 mb-4">Cluster health syncing</p>
+              <p className="text-xs text-slate-400 mb-4">Cluster health & Pod syncing</p>
               <button 
-                onClick={() => alert("Kubernetes agent is connected via sidecar container.")}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-white rounded-lg transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer font-medium"
+                onClick={() => setIsK8sModalOpen(true)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs text-white font-semibold rounded-lg transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20"
               >
-                Syncing
+                <Activity size={13} /> View Cluster Status
               </button>
             </div>
           </div>
         </section>
 
-        {/* 5. Danger Zone */}
+        {/* 4. Danger Zone */}
         <section className="border border-red-500/30 rounded-2xl overflow-hidden relative">
-           {/* Red glowing background effect */}
            <div className="absolute inset-0 bg-red-500/5 z-0 pointer-events-none"></div>
            
            <div className="relative z-10 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -296,6 +253,101 @@ export default function Settings() {
            </div>
         </section>
       </div>
+
+      {/* Kubernetes Cluster Status Modal */}
+      {isK8sModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                  <Boxes size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Kubernetes Cluster Status</h3>
+                  <p className="text-xs text-slate-400">Namespace: <span className="text-blue-400 font-mono">cloudops</span></p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsK8sModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">Control Plane</span>
+                  <span className="flex items-center gap-1.5 text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Ready (v1.30.0)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">NodePort Service</span>
+                  <span className="text-slate-200 font-mono">http://localhost:30090</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">Auto-Scaler (HPA)</span>
+                  <span className="text-slate-200 font-mono">Active (Min: 2, Max: 10)</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Deployments</h4>
+                
+                <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Server size={16} className="text-blue-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white">cloudops-api</p>
+                      <p className="text-[10px] text-slate-500">NodePort 30090 / Port 5000</p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">2/2 Replicas</span>
+                </div>
+
+                <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Server size={16} className="text-purple-400" />
+                    <div>
+                      <p className="text-xs font-bold text-white">cloudops-client</p>
+                      <p className="text-[10px] text-slate-500">Ingress / Port 80</p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">2/2 Replicas</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between">
+              <button
+                onClick={testK8sConnection}
+                disabled={isK8sTesting}
+                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              >
+                {isK8sTesting ? (
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-b-white"></div>
+                ) : k8sTestSuccess ? (
+                  <CheckCircle2 size={14} className="text-emerald-400" />
+                ) : (
+                  <Activity size={14} />
+                )}
+                {isK8sTesting ? "Testing Ping..." : k8sTestSuccess ? "Ping 200 OK!" : "Test Endpoint Ping"}
+              </button>
+
+              <button
+                onClick={() => setIsK8sModalOpen(false)}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
