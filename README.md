@@ -66,21 +66,54 @@ flowchart TD
 
 ---
 
-## 📋 Prerequisites
+## 🐣 Zero-Prerequisite Setup Guide (Fresh PC / Mac / Linux)
 
-Before running the project on a new computer, ensure you have installed:
+If you are setting up this project on a brand new computer with **no tools installed** (no Docker, no WSL, no Git, no Node.js), follow these step-by-step instructions.
 
-1. **Git**: [git-scm.com](https://git-scm.com/)
-2. **Node.js** (v18+ & npm): [nodejs.org](https://nodejs.org/)
-3. **Docker Desktop** or **Docker Engine**: [docker.com](https://www.docker.com/)
-4. **kubectl** (Kubernetes CLI): [kubernetes.io](https://kubernetes.io/docs/tasks/tools/)
-5. **Kind** or **Minikube** (Optional, for Kubernetes deployment): [kind.sigs.k8s.io](https://kind.sigs.k8s.io/)
+### Step 1: Install Git & Node.js
+- **Windows**:
+  1. Download & run the installer from **[git-scm.com](https://git-scm.com/download/win)**.
+  2. Download & run Node.js LTS installer from **[nodejs.org](https://nodejs.org/)**.
+- **macOS**:
+  1. Open Terminal and run `xcode-select --install` (installs Git).
+  2. Download Node.js LTS installer from **[nodejs.org](https://nodejs.org/)** or use Homebrew (`brew install node`).
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt update && sudo apt install -y git nodejs npm
+  ```
+
+### Step 2: Install WSL 2 & Docker Desktop (Crucial for Windows)
+- **Windows Users**:
+  1. Open **PowerShell as Administrator** and execute:
+     ```powershell
+     wsl --install
+     ```
+  2. **Restart your computer** when prompted.
+  3. Download **Docker Desktop** from **[docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)** and run installer.
+  4. Launch **Docker Desktop** and ensure the status bar says **"Docker Desktop is running"** (Green icon).
+- **macOS Users**:
+  1. Download **Docker Desktop for Mac** (select Apple Silicon or Intel chip).
+  2. Drag Docker to Applications and launch it.
+- **Linux Users**:
+  ```bash
+  sudo apt update && sudo apt install -y docker.io docker-compose-v2
+  sudo usermod -aG docker $USER
+  ```
+  *(Log out and log back in to apply group permissions)*
+
+### Step 3: Install Cloudflared (Optional, for GitHub Webhooks)
+- **Windows**: Run in Command Prompt / PowerShell:
+  ```cmd
+  winget install Cloudflare.cloudflared
+  ```
+- **macOS**: `brew install cloudflare/cloudflare/cloudflared`
+- **Linux**: Download `.deb` from [cloudflared releases](https://github.com/cloudflare/cloudflared/releases).
 
 ---
 
 ## 🚀 Option 1: Quick Start with Docker Compose (Recommended)
 
-Run the entire platform (Client, API, Database, Nginx, Prometheus, Grafana, Node Exporter, Jenkins) with a single command:
+Once Docker Desktop is running, launch the entire platform (Client, API, Database, Nginx, Prometheus, Grafana, Node Exporter, Jenkins) with a single command:
 
 ### 1. Clone the repository
 ```bash
