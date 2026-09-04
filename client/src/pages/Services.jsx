@@ -14,9 +14,10 @@ export default function Services() {
   const loadServices = async () => {
     try {
       const res = await getServices();
-      setServices(res.data.data || []);
+      setServices(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (err) {
       console.error(err);
+      setServices([]);
     } finally {
       setLoading(false);
     }

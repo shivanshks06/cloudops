@@ -10,9 +10,10 @@ export default function Incidents() {
   const loadIncidents = async () => {
     try {
       const res = await getIncidents();
-      setIncidents(res.data.data || []);
+      setIncidents(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (err) {
       console.error(err);
+      setIncidents([]);
     } finally {
       setLoading(false);
     }
@@ -25,14 +26,15 @@ export default function Incidents() {
   }, []);
 
   const filteredIncidents = useMemo(() => {
-    if (filter === "all") return incidents;
+    const list = Array.isArray(incidents) ? incidents : [];
+    if (filter === "all") return list;
     if (filter === "open" || filter === "resolved") {
-      return incidents.filter((inc) => inc.status === filter);
+      return list.filter((inc) => inc.status === filter);
     }
     if (filter === "critical" || filter === "warning") {
-      return incidents.filter((inc) => inc.severity === filter);
+      return list.filter((inc) => inc.severity === filter);
     }
-    return incidents;
+    return list;
   }, [incidents, filter]);
 
   const formatTime = (timestamp) => {

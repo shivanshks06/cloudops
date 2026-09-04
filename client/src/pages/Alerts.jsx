@@ -12,9 +12,10 @@ export default function Alerts() {
   const loadAlerts = async () => {
     try {
       const res = await getAlerts();
-      setAlerts(res.data.data);
+      setAlerts(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (err) {
       console.error(err);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -40,12 +41,13 @@ export default function Alerts() {
   };
 
   const filteredAlerts = useMemo(() => {
-    if (filter === "active") return alerts.filter((a) => a.status === "active");
-    if (filter === "acknowledged") return alerts.filter((a) => a.acknowledged === true);
+    const list = Array.isArray(alerts) ? alerts : [];
+    if (filter === "active") return list.filter((a) => a.status === "active");
+    if (filter === "acknowledged") return list.filter((a) => a.acknowledged === true);
     if (filter === "critical" || filter === "warning") {
-      return alerts.filter((a) => a.severity === filter);
+      return list.filter((a) => a.severity === filter);
     }
-    return alerts;
+    return list;
   }, [alerts, filter]);
 
   const getSeverityConfig = (severity) => {

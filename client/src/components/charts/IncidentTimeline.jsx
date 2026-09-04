@@ -6,9 +6,12 @@ export default function IncidentTimeline() {
   const [incidents, setIncidents] = useState([]);
 
   useEffect(() => {
-    getIncidents().then((res) =>
-      setIncidents(res.data.data)
-    );
+    getIncidents()
+      .then((res) => setIncidents(Array.isArray(res.data?.data) ? res.data.data : []))
+      .catch((err) => {
+        console.error(err);
+        setIncidents([]);
+      });
   }, []);
   const getSeverityStyles = (status, severity) => {
     if (status === "resolved") {
