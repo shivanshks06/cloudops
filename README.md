@@ -186,7 +186,31 @@ Go to **Manage Jenkins** -> **Credentials** -> **System** -> **Global credential
   - **ID**: `kubeconfig`
   - **File**: Upload your cluster's `kubeconfig` file.
 
-### 3. Pipeline Stages
+### 3. Setting Up GitHub Webhook (via Cloudflare Tunnel)
+
+Since Jenkins runs locally on `http://localhost:8082`, GitHub requires a public HTTPS URL to deliver push events. You can generate a free public tunnel using **Cloudflare Tunnel**:
+
+#### Step 1: Start Cloudflare Tunnel
+```bash
+cloudflared tunnel --url http://localhost:8082
+```
+Cloudflare will output a public HTTPS URL (e.g. `https://abc123.trycloudflare.com`). Keep this terminal window open.
+
+#### Step 2: Configure Webhook in GitHub
+1. Go to **GitHub** -> **Your Repository** -> **Settings** -> **Webhooks** -> **Add Webhook**.
+2. **Payload URL**: `https://<your-cloudflare-subdomain>.trycloudflare.com/github-webhook/`
+3. **Content type**: `application/json`
+4. **Secret**: Leave empty
+5. **Events**: Select **Just the push event**
+6. Click **Add Webhook**.
+
+#### Step 3: Enable Webhook Trigger in Jenkins
+1. Open Jenkins at [http://localhost:8082](http://localhost:8082).
+2. Open your project job -> **Configure** -> **Build Triggers**.
+3. Check **GitHub hook trigger for GITScm polling**.
+4. Save the job. Now every `git push` automatically runs your full CI/CD pipeline!
+
+### 4. Pipeline Stages
 1. **Checkout**: Pulls latest repository code.
 2. **Verify Tools**: Validates Git, Node, Docker, and Docker Compose versions.
 3. **Dependencies & React Build**: Installs node modules and builds frontend assets.
