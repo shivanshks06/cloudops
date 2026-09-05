@@ -270,8 +270,3 @@ Grafana is pre-configured with auto-provisioned datasources and dashboards:
 - **Jenkins cannot reach Kubernetes**: Ensure `server` URL in `kubeconfig` uses `https://cloudops-control-plane:6443` or `https://host.docker.internal:<port>` depending on your container setup.
 - **Port Conflict**: If port `5000`, `5173`, `8081`, `5432`, `9090`, `3001`, or `8082` is already in use on your system, update the host port mappings in `compose.yml`.
 
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
