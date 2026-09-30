@@ -18,40 +18,40 @@
 ```mermaid
 flowchart TD
     subgraph Clients["Users & Clients"]
-        User["Browser Client (React 18 + Vite + Tailwind)"]
+        User["Browser Client - React 18 & Vite"]
     end
 
     subgraph Gateway["Ingress & Gateway"]
-        Nginx["Nginx Reverse Proxy / Load Balancer"]
+        Nginx["Nginx Reverse Proxy & Load Balancer"]
     end
 
     subgraph ApplicationLayer["Application Tier"]
         AuthMid["Auth & Tenant Isolation Middleware"]
-        API["Node.js Express Server (Cluster Engine)"]
+        API["Node.js Express Server"]
         SocketServer["Socket.IO Real-Time Event Hub"]
         HealthEngine["Synthetic Health Checker & Prober"]
     end
 
     subgraph DatabaseLayer["Data Persistence"]
-        PG[(PostgreSQL 17 Primary Database)]
+        PG[("PostgreSQL 17 Primary Database")]
     end
 
     subgraph ObservabilityLayer["Telemetry & Monitoring Stack"]
-        Prometheus["Prometheus Time-Series Scraper (:9091)"]
-        Alertmanager["Prometheus Alertmanager (:9093)"]
-        Grafana["Grafana Provisioned Dashboards (:3002)"]
-        Jaeger["Jaeger Distributed Tracing (OTel :16686)"]
-        Loki["Loki & Promtail Log Aggregator (:3100)"]
+        Prometheus["Prometheus Time-Series Scraper :9091"]
+        Alertmanager["Prometheus Alertmanager :9093"]
+        Grafana["Grafana Provisioned Dashboards :3002"]
+        Jaeger["Jaeger Distributed Tracing OTel :16686"]
+        Loki["Loki & Promtail Log Aggregator :3100"]
     end
 
     subgraph InfrastructureLayer["Connected Infrastructure & CI/CD"]
-        K8s["Kubernetes Cluster (Nodes, Pods, HPA, Events)"]
-        Jenkins["Jenkins CI/CD Pipeline (Builds & Rollbacks)"]
+        K8s["Kubernetes Cluster Nodes & Pods"]
+        Jenkins["Jenkins CI/CD Pipeline"]
         Slack["Slack & Discord Webhooks"]
     end
 
-    User <-->|HTTP / REST| Nginx
-    User <-->|WebSockets (Bi-directional)| SocketServer
+    User -->|HTTP / REST| Nginx
+    User <-->|WebSockets| SocketServer
     Nginx --> API
     API --> AuthMid
     AuthMid --> PG
@@ -65,7 +65,7 @@ flowchart TD
     Alertmanager -->|Alert Webhooks| API
     Grafana --> Prometheus
 
-    API <-->|Cluster API / kubeconfig| K8s
+    API <--> K8s
     Jenkins -->|Deployment Webhook| API
 ```
 
