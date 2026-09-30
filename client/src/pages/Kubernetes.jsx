@@ -4,6 +4,7 @@ import {
   Layers,
   Server,
   Box,
+  Boxes,
   Cpu,
   Activity,
   AlertTriangle,
