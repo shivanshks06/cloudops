@@ -196,19 +196,35 @@ NODE_ENV=development
 docker-compose -f monitoring/docker-compose.yml up -d
 ```
 
-### 5. Launch Application
+### 5. Launch & Shutdown (1-Command Up / Down)
 
+#### 🟢 To Start Everything:
 ```bash
-# Terminal 1: Backend Server
-cd server
-npm run dev
+# Option A: From root directory
+npm run up
 
-# Terminal 2: Frontend Client
-cd client
-npm run dev
+# Option B (Windows): Double-click or run:
+.\up.bat
+
+# Option C (Linux/macOS):
+./up.sh
 ```
+*This starts the Backend API (`:5000`), Vite Frontend (`:5173`), and automatically opens `http://localhost:5173` in your default browser.*
 
-Visit **`http://localhost:5173`** in your browser.
+---
+
+#### 🔴 To Stop Everything:
+```bash
+# Option A: From root directory
+npm run down
+
+# Option B (Windows): Double-click or run:
+.\down.bat
+
+# Option C (Linux/macOS):
+./down.sh
+```
+*This cleanly terminates all node processes and frees ports `5000` and `5173`.*
 
 ---
 
