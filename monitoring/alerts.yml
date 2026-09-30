@@ -1,0 +1,60 @@
+groups:
+  - name: cloudops-alerts
+    rules:
+      # API is down
+      - alert: CloudOpsAPIDown
+        expr: up{job="cloudops-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudops-api
+        annotations:
+          summary: "CloudOps API is down"
+          description: "CloudOps API has been unreachable for more than 1 minute."
+
+      # Node exporter is down
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: node-exporter
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Node Exporter has been unreachable for more than 1 minute."
+
+      # High CPU
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage has been above 80% for more than 5 minutes."
+
+      # High memory
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage has been above 80% for more than 5 minutes."
+
+      # High API error rate
+      - alert: HighAPIErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="cloudops-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="cloudops-api"}[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudops-api
+        annotations:
+          summary: "High API error rate"
+          description: "CloudOps API 5xx error rate has exceeded 5% for more than 5 minutes."

@@ -1,272 +1,221 @@
-# 🚀 CloudOps - Observability & SRE Incident Management Platform
+# 🚀 CloudOps — Multi-Tenant Observability & SRE Operations Platform
 
-CloudOps is an enterprise-grade SRE (Site Reliability Engineering) observability dashboard and incident management platform. It includes real-time health metrics, automated chaos testing endpoints, Prometheus/Grafana monitoring with auto-provisioned dashboards, a multi-container Docker Compose architecture, Kubernetes manifests with HPA auto-scaling, and a full Jenkins CI/CD pipeline with automated zero-downtime rollouts and failure rollbacks.
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-68a063?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black)](https://reactjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.30+-326ce5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-v2.54-e6522c?logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Jaeger-f5a800?logo=opentelemetry&logoColor=white)](https://opentelemetry.io/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-v4-010101?logo=socket.io&logoColor=white)](https://socket.io/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+**CloudOps** is a production-ready, multi-tenant Site Reliability Engineering (SRE) observability and operations platform. It provides unified monitoring for external websites, REST APIs, and connected cloud infrastructure with real-time alerting, incident response management, automated CI/CD deployment tracking, and Kubernetes cluster health diagnostics — all from a single pane of glass.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
-
-- **Frontend**: React 18, Vite, Tailwind CSS / Vanilla CSS, Lucide Icons
-- **Backend**: Node.js, Express.js, PostgreSQL (`pg`), `prom-client` telemetry metrics
-- **Database**: PostgreSQL 17 (with automated `node-pg-migrate` execution)
-- **Monitoring & Observability**: Prometheus, Grafana (with auto-provisioned Prometheus datasource & JSON dashboards), Node Exporter
-- **Containerization**: Docker & Docker Compose
-- **Orchestration**: Kubernetes (Kind / Minikube) with Kustomize, HPA, Ingress, and PVC
-- **CI/CD Pipeline**: Jenkins (Automated build, test, Docker Hub push, Kubernetes rollout/rollback, and health validation)
+## 🏗️ High-Level System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Clients["User & Admin Access"]
-        Browser["React Client (Vite: 5173 / Nginx: 8081)"]
+    subgraph Clients["Users & Clients"]
+        User["Browser Client (React 18 + Vite + Tailwind)"]
     end
 
-    subgraph ReverseProxy["Ingress / Gateway"]
-        Nginx["Nginx Reverse Proxy (8081)"]
+    subgraph Gateway["Ingress & Gateway"]
+        Nginx["Nginx Reverse Proxy / Load Balancer"]
     end
 
-    subgraph BackendServices["Application Tier"]
-        API["Node.js Express API (5000)"]
-        DB[(PostgreSQL 17: 5432)]
+    subgraph ApplicationLayer["Application Tier"]
+        AuthMid["Auth & Tenant Isolation Middleware"]
+        API["Node.js Express Server (Cluster Engine)"]
+        SocketServer["Socket.IO Real-Time Event Hub"]
+        HealthEngine["Synthetic Health Checker & Prober"]
     end
 
-    subgraph Observability["Monitoring & Telemetry"]
-        Prometheus["Prometheus (9090)"]
-        Grafana["Grafana Dashboard (3001)"]
-        NodeExporter["Node Exporter (9100)"]
+    subgraph DatabaseLayer["Data Persistence"]
+        PG[(PostgreSQL 17 Primary Database)]
     end
 
-    subgraph Pipeline["CI/CD Automation"]
-        Jenkins["Jenkins Server (8082)"]
-        K8sCluster["Kubernetes Cluster (Kind / Minikube)"]
+    subgraph ObservabilityLayer["Telemetry & Monitoring Stack"]
+        Prometheus["Prometheus Time-Series Scraper (:9091)"]
+        Alertmanager["Prometheus Alertmanager (:9093)"]
+        Grafana["Grafana Provisioned Dashboards (:3002)"]
+        Jaeger["Jaeger Distributed Tracing (OTel :16686)"]
+        Loki["Loki & Promtail Log Aggregator (:3100)"]
     end
 
-    Browser --> Nginx
+    subgraph InfrastructureLayer["Connected Infrastructure & CI/CD"]
+        K8s["Kubernetes Cluster (Nodes, Pods, HPA, Events)"]
+        Jenkins["Jenkins CI/CD Pipeline (Builds & Rollbacks)"]
+        Slack["Slack & Discord Webhooks"]
+    end
+
+    User <-->|HTTP / REST| Nginx
+    User <-->|WebSockets (Bi-directional)| SocketServer
     Nginx --> API
-    API --> DB
-    Prometheus --> API
-    Prometheus --> NodeExporter
+    API --> AuthMid
+    AuthMid --> PG
+    SocketServer <--> API
+    HealthEngine -->|Periodic Probes| API
+    HealthEngine -->|Trigger Alerts| Slack
+
+    API -->|Distributed Traces| Jaeger
+    API -->|Metrics Exporter| Prometheus
+    Prometheus --> Alertmanager
+    Alertmanager -->|Alert Webhooks| API
     Grafana --> Prometheus
-    Jenkins --> K8sCluster
+
+    API <-->|Cluster API / kubeconfig| K8s
+    Jenkins -->|Deployment Webhook| API
 ```
 
 ---
 
-## 📌 Service Port Mapping
+## 🌟 Core Platform Capabilities
 
-| Service Name | Container Port | Host Port | Description |
-|---|---|---|---|
-| **CloudOps Client** | `5173` | `http://localhost:5173` | Frontend SRE Dashboard |
-| **CloudOps API** | `5000` | `http://localhost:5000` | Backend REST API & Telemetry (`/health`, `/metrics`) |
-| **Nginx Gateway** | `80` | `http://localhost:8081` | Reverse Proxy Entry Endpoint |
-| **PostgreSQL DB** | `5432` | `localhost:5432` | Primary Database |
-| **Prometheus** | `9090` | `http://localhost:9090` | Telemetry Metrics Scraper |
-| **Grafana** | `3000` | `http://localhost:3001` | Provisioned Dashboards (`admin`/`admin`) |
-| **Node Exporter** | `9100` | `http://localhost:9100` | System Metrics Exporter |
-| **Jenkins CI/CD** | `8080` | `http://localhost:8082` | Continuous Delivery Server |
-
----
-
-## 🐣 Setup Guide (PC / Mac / Linux)
-
-If you are setting up this project on a brand new computer with **no tools installed** (no Docker, no WSL, no Git, no Node.js), follow these step-by-step instructions.
-
-### Step 1: Install Git & Node.js
-- **Windows**:
-  1. Download & run the installer from **[git-scm.com](https://git-scm.com/download/win)**.
-  2. Download & run Node.js LTS installer from **[nodejs.org](https://nodejs.org/)**.
-- **macOS**:
-  1. Open Terminal and run `xcode-select --install` (installs Git).
-  2. Download Node.js LTS installer from **[nodejs.org](https://nodejs.org/)** or use Homebrew (`brew install node`).
-- **Linux (Ubuntu/Debian)**:
-  ```bash
-  sudo apt update && sudo apt install -y git nodejs npm
-  ```
-
-### Step 2: Install WSL 2 & Docker Desktop (Crucial for Windows)
-- **Windows Users**:
-  1. Open **PowerShell as Administrator** and execute:
-     ```powershell
-     wsl --install
-     ```
-  2. **Restart your computer** when prompted.
-  3. Download **Docker Desktop** from **[docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)** and run installer.
-  4. Launch **Docker Desktop** and ensure the status bar says **"Docker Desktop is running"** (Green icon).
-- **macOS Users**:
-  1. Download **Docker Desktop for Mac** (select Apple Silicon or Intel chip).
-  2. Drag Docker to Applications and launch it.
-- **Linux Users**:
-  ```bash
-  sudo apt update && sudo apt install -y docker.io docker-compose-v2
-  sudo usermod -aG docker $USER
-  ```
-  *(Log out and log back in to apply group permissions)*
-
-### Step 3: Install Cloudflared (Optional, for GitHub Webhooks)
-- **Windows**: Run in Command Prompt / PowerShell:
-  ```cmd
-  winget install Cloudflare.cloudflared
-  ```
-- **macOS**: `brew install cloudflare/cloudflare/cloudflared`
-- **Linux**: Download `.deb` from [cloudflared releases](https://github.com/cloudflare/cloudflared/releases).
-
----
-
-## 🚀 Option 1: Quick Start with Docker Compose (Recommended)
-
-Once Docker Desktop is running, launch the entire platform (Client, API, Database, Nginx, Prometheus, Grafana, Node Exporter, Jenkins) with a single command:
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/shivanshks06/cloudops.git
-cd cloudops
-```
-
-### 2. Start all services
-```bash
-docker compose up -d --build
-```
-
-### 3. Verify running containers
-```bash
-docker ps
-```
-
-### 4. Access the platform
-- **Frontend Dashboard**: [http://localhost:5173](http://localhost:5173) or [http://localhost:8081](http://localhost:8081)
-- **API Health Check**: [http://localhost:5000/health](http://localhost:5000/health)
-- **Prometheus Metrics**: [http://localhost:5000/metrics](http://localhost:5000/metrics)
-- **Prometheus Scraper**: [http://localhost:9090](http://localhost:9090)
-- **Grafana Dashboards**: [http://localhost:3001](http://localhost:3001) *(Login: `admin` / `admin`)*
-- **Jenkins CI/CD**: [http://localhost:8082](http://localhost:8082)
-
----
-
-## 💻 Option 2: Native Local Development (Node.js)
-
-If you wish to modify the code locally with live hot-reloading:
-
-### 1. Start PostgreSQL Database
-```bash
-docker compose up -d db
-```
-
-### 2. Configure & Start Backend API
-```bash
-cd server
-npm install
-npm run migrate # Runs database migrations
-npm run dev     # Starts Express server on port 5000
-```
-
-### 3. Configure & Start Frontend Client
-In a new terminal window:
-```bash
-cd client
-npm install
-npm run dev     # Starts Vite server on port 5173
+```text
+                                CLOUDOPS SAAS PLATFORM
+                                          │
+                                     User Signup
+                                          ↓
+                                 Create Workspaces
+                    ┌─────────────────────┴─────────────────────┐
+                    ↓                                           ↓
+           External Websites & APIs                   Connected Infrastructure
+           ├── HTTP GET / POST / HEAD                 ├── Kubernetes Kind / EKS Cluster
+           ├── Custom Headers & Payloads              ├── OpenTelemetry Traces (Jaeger)
+           ├── Rolling Uptime & Latency               └── Node Exporter / Prometheus
+           └── SSL Certificate Check
+                    │                                           │
+                    └─────────────────────┬─────────────────────┘
+                                          ↓
+                              User Alert Rule Engine
+                                (No YAML Required)
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    ↓                     ↓                     ↓
+             Live Dashboard         Incidents 2.0        Slack & Discord
+             (WebSockets)          (Timeline & MTTR)      (Webhooks)
 ```
 
 ---
 
-## ☸️ Option 3: Deploy to Kubernetes
-
-Deploy the CloudOps application stack to a local Kubernetes cluster using Kustomize.
-
-### 1. Start your local Kubernetes cluster
-Using **Kind**:
-```bash
-kind create cluster --name cloudops
-```
-Or using **Minikube**:
-```bash
-minikube start
-```
-
-### 2. Apply all Kubernetes manifests
-```bash
-kubectl apply -k k8s/
-```
-
-### 3. Verify deployment status
-```bash
-kubectl get all -n cloudops
-```
-
-### 4. Access the application in Kubernetes
-Port-forward the client service:
-```bash
-kubectl port-forward svc/cloudops-client-service 5173:80 -n cloudops
-```
-Open your browser at [http://localhost:5173](http://localhost:5173).
+### 1. 🏢 Multi-Tenant Workspaces & Strict Isolation
+* **User Accounts**: Authentication with bcrypt password hashing and JSON Web Tokens (JWT).
+* **Workspace Scoping**: Each user organizes their monitoring targets into distinct projects (e.g. *E-Commerce Production*, *Payment Gateway*, *Portfolio*).
+* **Data Privacy**: Tenant isolation is enforced at the database level across services, metrics, incidents, deployments, and alerts. User A can never access User B's targets, credentials, or telemetry logs.
+* **Workspace Switcher**: Switch between projects or create new workspaces on the fly directly from the top navigation bar.
 
 ---
 
-## 🔄 Jenkins CI/CD Pipeline Setup
+### 2. 🌐 Dual-Mode Monitoring Engine
 
-The project includes a production-grade declarative `Jenkinsfile` that automates testing, building Docker images with dynamic build numbers, pushing to Docker Hub, updating Kubernetes deployments, and executing rollbacks on failure.
+| Capability | External Websites & REST APIs | Connected Cloud Infrastructure |
+| :--- | :--- | :--- |
+| **Target Types** | Public URLs, Microservices, API endpoints | Kubernetes Clusters (Kind, EKS, GKE), Docker hosts |
+| **Methods** | `GET`, `POST`, `HEAD`, `PUT`, `PATCH` | Kubernetes API Client, OTLP Traces, Prometheus Scrapes |
+| **Inspection** | HTTP status codes, latency, JSON bodies, headers | CPU/Memory limits, Pod restarts, Node pressures |
+| **SSL Security** | Certificate expiry tracking & proactive warnings | Cluster certificate authority validation |
+| **Frequency** | Every `30s`, `1m`, or `5m` | Continuous Prometheus & OpenTelemetry streams |
 
-### 1. Access Jenkins
-Open [http://localhost:8082](http://localhost:8082) in your browser.
+* **Live Test Probe**: Test any external endpoint (e.g. `https://instagram.com`, `https://google.com`) directly from the creation modal to verify latency and status before saving.
+* **Custom Headers & Payloads**: Support for JSON request bodies and authentication headers (e.g. `Authorization: Bearer <token>`).
 
-### 2. Configure Credentials in Jenkins (Optional)
-Go to **Manage Jenkins** -> **Credentials** -> **System** -> **Global credentials**:
-- **Docker Hub Credentials**:
-  - **Kind**: `Username with password`
-  - **ID**: `dockerhub-creds`
-  - **Username/Password**: Your Docker Hub credentials.
-- **Kubernetes Config**:
-  - **Kind**: `Secret file`
-  - **ID**: `kubeconfig`
-  - **File**: Upload your cluster's `kubeconfig` file.
+---
 
-### 3. Setting Up GitHub Webhook (via Cloudflare Tunnel)
+### 3. 🔔 No-Code Dynamic Alert Rules
+* **UI-Driven Configuration**: Create and manage alert rules directly in the interface without writing Prometheus YAML or modifying server configs.
+* **Condition Triggers**:
+  * **Latency Threshold**: Trigger alerts when response time exceeds a specified limit (e.g. `Response Time > 500ms for 1m`).
+  * **Availability**: Trigger critical alerts when an endpoint is unreachable or down.
+  * **Status Code**: Trigger warnings when HTTP responses do not match the expected status (e.g. `Status != 200`).
+* **Severities**: `Critical`, `Warning`, and `Info`.
+* **Automated Evaluation**: Evaluated continuously on every probe cycle by the synthetic health engine.
 
-Since Jenkins runs locally on `http://localhost:8082`, GitHub requires a public HTTPS URL to deliver push events. You can generate a free public tunnel using **Cloudflare Tunnel**:
+---
 
-#### Step 1: Start Cloudflare Tunnel
-```bash
-cloudflared tunnel --url http://localhost:8082
+### 4. 🚨 Incident Management 2.0 & SRE Operations
+* **Lifecycle State Machine**: Supports `OPEN` ➔ `ACKNOWLEDGED` ➔ `RESOLVED`, with automatic resolution when targets recover.
+* **Interactive Timeline**: Every incident includes a chronological audit log tracking alert triggers, notifications dispatched, engineer acknowledgments, and resolution events.
+* **Automated SRE Metrics**:
+  * **MTTR (Mean Time to Resolution)**: Calculates real-time recovery duration.
+  * **MTTD (Mean Time to Detection)**: Evaluates response speed.
+  * **Incident Counters**: Real-time badges across sidebars and dashboard KPIs.
+
+---
+
+### 5. 💬 Multi-Channel Notification Dispatcher
+* **Slack Webhooks**: Delivers rich alert cards to dedicated workspace channels (e.g. `#production-alerts`) detailing the affected target, rule triggered, latency, and timestamp.
+* **Discord Webhooks**: Broadcasts incident notifications and recovery updates to Discord channels.
+* **Email Summaries**: Toggles daily SRE health digests and critical outage reports.
+* **Live Test Verification**: Dedicated "Test Ping" buttons in workspace settings verify webhook delivery immediately.
+
+---
+
+### 6. ⚡ Real-Time WebSocket Streaming (Socket.IO)
+* **Zero-Refresh UI**: The dashboard, incident lists, and telemetry charts update instantaneously via WebSockets when events occur.
+* **Live Connection Indicator**: Pulsing status badge indicating real-time socket connectivity.
+* **Response Time Trends**: Interactive visual graphs tracking multi-target latency over time.
+* **Health Distribution Donut Chart**: Visual breakdown of operational vs degraded services.
+* **Live Activity Ticker**: Real-time stream of cluster events, deployment rollouts, and alert changes.
+
+---
+
+### 7. 🚢 CI/CD Deployment Tracking & Rollback Engine
+* **Flexible Ingestion**: Track software releases from **Jenkins Pipelines**, **GitHub Actions**, **GitLab CI**, or direct UI triggers.
+* **DORA Metrics**:
+  * **Deployments Today** & Total Release Volume.
+  * **Change Failure Rate (%)**.
+  * **Mean Deployment Duration**.
+  * **Rollback Frequency (%)**.
+* **Release Metadata**: Records Git commit SHA, branch, author, build duration, Docker image tag, and CI build URL.
+* **One-Click Rollbacks**: Revert to previous stable versions with an automated audit log entry.
+
+---
+
+### 8. ☸️ Kubernetes Health Center
+* **Cluster Overview**: Live monitoring of control plane status, total worker nodes, CPU/Memory resource utilization, and active deployments.
+* **Pod Explorer**: Complete list of running pods across all namespaces (`production`, `staging`, `kube-system`), replica counts, restarts, and node assignments.
+* **Failure Simulator**: Built-in Chaos testing to simulate `CrashLoopBackOff`, `OOMKilled`, or `Failed` states to validate self-healing architectures.
+* **HPA & Autoscaling**: Monitor Horizontal Pod Autoscalers (min/max replicas and target CPU percentages).
+
+---
+
+### 9. 🔭 Distributed Observability Trio
+
+| Component | Port | Purpose |
+| :--- | :--- | :--- |
+| **Prometheus** | `:9091` | High-performance time-series metric collection and scraping. |
+| **Alertmanager** | `:9093` | Alert routing, deduplication, and notification webhooks. |
+| **Grafana** | `:3002` | Provisioned dashboards for multi-dimensional data visualization. |
+| **Jaeger (OTel)** | `:16686` | Distributed request tracing across HTTP endpoints and DB queries. |
+| **Loki & Promtail** | `:3100` | Centralized log ingestion, indexing, and stream querying. |
+| **Node Exporter** | `:9100` | Host hardware and OS metric monitoring. |
+
+---
+
+## 🔒 Security & Data Isolation Architecture
+
+```text
+┌────────────────────────────────────────────────────────┐
+│                      Tenant Isolation                  │
+├────────────────────────────┬───────────────────────────┤
+│ User A (Workspace: Store)  │ User B (Workspace: API)   │
+├────────────────────────────┼───────────────────────────┤
+│ • https://myshop.com       │ • https://myapi.io/health │
+│ • Store Alert Rules        │ • API Alert Rules         │
+│ • User A Slack Webhooks    │ • User B Discord Webhooks │
+│ • Isolated DB Records      │ • Isolated DB Records     │
+└────────────────────────────┴───────────────────────────┘
 ```
-Cloudflare will output a public HTTPS URL (e.g. `https://abc123.trycloudflare.com`). Keep this terminal window open.
 
-#### Step 2: Configure Webhook in GitHub
-1. Go to **GitHub** -> **Your Repository** -> **Settings** -> **Webhooks** -> **Add Webhook**.
-2. **Payload URL**: `https://<your-cloudflare-subdomain>.trycloudflare.com/github-webhook/`
-3. **Content type**: `application/json`
-4. **Secret**: Leave empty
-5. **Events**: Select **Just the push event**
-6. Click **Add Webhook**.
-
-#### Step 3: Enable Webhook Trigger in Jenkins
-1. Open Jenkins at [http://localhost:8082](http://localhost:8082).
-2. Open your project job -> **Configure** -> **Build Triggers**.
-3. Check **GitHub hook trigger for GITScm polling**.
-4. Save the job. Now every `git push` automatically runs your full CI/CD pipeline!
-
-### 4. Pipeline Stages
-1. **Checkout**: Pulls latest repository code.
-2. **Verify Tools**: Validates Git, Node, Docker, and Docker Compose versions.
-3. **Dependencies & React Build**: Installs node modules and builds frontend assets.
-4. **Backend Verification**: Syntax and structural checks.
-5. **Docker Build & Push**: Builds tagged images (`cloudops-api:BUILD_NUMBER` & `cloudops-client:BUILD_NUMBER`) and pushes to Docker Hub.
-6. **Deploy Application**: Applies Kubernetes manifests or updates Docker Compose services.
-7. **Health Verification**: Runs end-to-end HTTP health checks (`/health`).
-8. **Automated Rollback**: Triggers `kubectl rollout undo` if deployment or health verification fails.
+* **Password Security**: Bcrypt with salted rounds.
+* **Token Verification**: Stateless JSON Web Tokens validated on every protected API route.
+* **Database Constraints**: Foreign key constraints and query-level `project_id` scoping prevent cross-tenant data leaks.
+* **Backend Probe Engine**: Synthetic probes execute securely from backend Node.js workers to prevent browser sandbox restrictions (CORS).
 
 ---
 
-## 📈 Observability & Grafana Dashboard Provisioning
+## 📄 License
 
-Grafana is pre-configured with auto-provisioned datasources and dashboards:
-- **Datasource Config**: `monitoring/grafana/provisioning/datasources/datasource.yml` (Connects Grafana directly to `http://prometheus:9090`).
-- **Dashboard JSON**: `monitoring/grafana/provisioning/dashboards/cloudops-dashboard.json` (Pre-loads dashboard `adj2xlj` featuring Total Services, Active Alerts, Active Incidents, and Service Response Time).
-- **Anonymous Embedding**: Enabled (`GF_AUTH_ANONYMOUS_ENABLED=true`, `GF_SECURITY_ALLOW_EMBEDDING=true`) for seamless iframe viewing in the React frontend.
-
----
-
-## 🔧 Troubleshooting
-
-- **Database Connection Failure**: Ensure the database health check passes. Run `docker compose logs db` to inspect PostgreSQL logs.
-- **Jenkins cannot reach Kubernetes**: Ensure `server` URL in `kubeconfig` uses `https://cloudops-control-plane:6443` or `https://host.docker.internal:<port>` depending on your container setup.
-- **Port Conflict**: If port `5000`, `5173`, `8081`, `5432`, `9090`, `3001`, or `8082` is already in use on your system, update the host port mappings in `compose.yml`.
-
+This project is licensed under the [MIT License](LICENSE).

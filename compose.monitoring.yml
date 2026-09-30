@@ -8,6 +8,26 @@ services:
 
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+
+    depends_on:
+      - alertmanager
+
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: cloudops-alertmanager
+
+    ports:
+      - "9093:9093"
+
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring/slack_url:/etc/alertmanager/slack_url:ro
+
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
 
     restart: unless-stopped
 
@@ -17,6 +37,48 @@ services:
 
     ports:
       - "9100:9100"
+
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: cloudops-loki
+
+    ports:
+      - "3100:3100"
+
+    command: -config.file=/etc/loki/local-config.yaml
+
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: cloudops-promtail
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+      - ./monitoring/promtail.yml:/etc/promtail/config.yml:ro
+
+    command: -config.file=/etc/promtail/config.yml
+
+    depends_on:
+      - loki
+
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: cloudops-jaeger
+
+    ports:
+      - "16686:16686" # Jaeger Web UI & Query API
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
 
     restart: unless-stopped
 
@@ -40,6 +102,8 @@ services:
 
     depends_on:
       - prometheus
+      - loki
+      - jaeger
 
     restart: unless-stopped
 

@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle, ShieldAlert, Inbox } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getIncidents } from "../../services/api";
 
 export default function IncidentTimeline() {
@@ -77,11 +78,14 @@ export default function IncidentTimeline() {
                 {/* Timeline dot */}
                 <div className={`absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full ${styles.dot} border-4 border-slate-900 ring-2 ring-slate-800/80 group-hover:scale-110 transition duration-200`} />
 
-                <div className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-4 hover:border-slate-650 transition duration-200">
+                <Link
+                  to={`/incidents/${incident.id}`}
+                  className="block bg-slate-900/30 border border-slate-700/50 rounded-xl p-4 hover:border-blue-500/50 hover:bg-slate-900/60 transition duration-200"
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-white group-hover:text-blue-400 transition">
-                        {incident.title}
+                        {incident.alert_name || incident.title}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider flex items-center gap-1 ${styles.bg} ${styles.text} border ${styles.border}`}>
                         {styles.icon}
@@ -98,7 +102,7 @@ export default function IncidentTimeline() {
                       : `Active degradation detected on ${incident.service_name || "microservice"}.`
                     }
                   </p>
-                </div>
+                </Link>
               </div>
             );
           })}

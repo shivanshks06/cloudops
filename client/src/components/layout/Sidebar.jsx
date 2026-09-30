@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -5,19 +6,69 @@ import {
   Activity,
   AlertTriangle,
   Bell,
+  Sliders,
   Settings,
+  Rocket,
+  Layers,
 } from "lucide-react";
+import { getAlerts, getIncidents } from "../../services/api";
+import { useSocketEvent } from "../../services/socket";
 
 const links = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Services", path: "/services", icon: Server },
+  { name: "Deployments", path: "/deployments", icon: Rocket },
+  { name: "Incidents", path: "/incidents", icon: AlertTriangle, key: "incidents" },
+  { name: "Kubernetes", path: "/kubernetes", icon: Layers },
   { name: "Metrics", path: "/metrics", icon: Activity },
-  { name: "Incidents", path: "/incidents", icon: AlertTriangle },
-  { name: "Alerts", path: "/alerts", icon: Bell },
+  { name: "Alerts", path: "/alerts", icon: Bell, key: "alerts" },
+  { name: "Alert Rules", path: "/alert-rules", icon: Sliders },
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 
+
 export default function Sidebar() {
+  const [activeAlerts, setActiveAlerts] = useState(0);
+  const [openIncidents, setOpenIncidents] = useState(0);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [alertsRes, incidentsRes] = await Promise.allSettled([
+          getAlerts(),
+          getIncidents(),
+        ]);
+        if (alertsRes.status === "fulfilled" && alertsRes.value.data?.data) {
+          const firing = alertsRes.value.data.data.filter(
+            (a) => a.status === "firing" || a.status === "open"
+          ).length;
+          setActiveAlerts(firing);
+        }
+        if (incidentsRes.status === "fulfilled" && incidentsRes.value.data?.data) {
+          const open = incidentsRes.value.data.data.filter(
+            (i) => i.status === "open" || i.status === "acknowledged"
+          ).length;
+          setOpenIncidents(open);
+        }
+      } catch (err) {
+        console.error("Failed to load initial sidebar counts", err);
+      }
+    };
+    fetchCounts();
+  }, []);
+
+  // Real-time socket event listeners
+  useSocketEvent("alert:firing", () => setActiveAlerts((p) => p + 1));
+  useSocketEvent("alert:resolved", () => setActiveAlerts((p) => Math.max(0, p - 1)));
+  useSocketEvent("incident:created", () => {
+    setOpenIncidents((p) => p + 1);
+    setActiveAlerts((p) => p + 1);
+  });
+  useSocketEvent("incident:resolved", () => {
+    setOpenIncidents((p) => Math.max(0, p - 1));
+    setActiveAlerts((p) => Math.max(0, p - 1));
+  });
+
   return (
     <aside className="w-64 bg-slate-950/80 backdrop-blur-md border-r border-slate-900 h-screen p-6 fixed z-50 flex flex-col">
       <div className="flex items-center gap-2.5 mb-10 px-2">
@@ -32,6 +83,12 @@ export default function Sidebar() {
       <nav className="space-y-1.5 flex-1">
         {links.map((link) => {
           const Icon = link.icon;
+          const count =
+            link.key === "alerts"
+              ? activeAlerts
+              : link.key === "incidents"
+              ? openIncidents
+              : 0;
 
           return (
             <NavLink
@@ -39,15 +96,27 @@ export default function Sidebar() {
               to={link.path}
               end={link.path === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition duration-200 cursor-pointer ${
+                `flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition duration-200 cursor-pointer ${
                   isActive
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-600/10 border border-blue-500/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
                 }`
               }
             >
-              <Icon size={18} />
-              {link.name}
+              <div className="flex items-center gap-3">
+                <Icon size={18} />
+                {link.name}
+              </div>
+
+              {count > 0 ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white shadow-sm shadow-rose-500/30 animate-pulse">
+                  🔴 {count}
+                </span>
+              ) : link.key === "alerts" || link.key === "incidents" ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  🟢 0
+                </span>
+              ) : null}
             </NavLink>
           );
         })}

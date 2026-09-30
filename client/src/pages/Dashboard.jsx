@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { 
   Server, 
   CheckCircle2, 
@@ -7,36 +8,76 @@ import {
   AlertOctagon, 
   RefreshCw, 
   Clock, 
-  ShieldCheck 
+  ShieldCheck,
+  Rocket,
+  ArrowRight,
+  Radio
 } from "lucide-react";
-import { getDashboardSummary } from "../services/api";
+import { getDashboardSummary, getDeploymentMetrics } from "../services/api";
 import ResponseTimeChart from "../components/charts/ResponseTimeChart";
 import HealthDonutChart from "../components/charts/HealthDonutChart";
 import IncidentTimeline from "../components/charts/IncidentTimeline";
+import LiveIndicator from "../components/common/LiveIndicator";
+import LiveActivityFeed from "../components/common/LiveActivityFeed";
+import { useSocketEvent } from "../services/socket";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [deploymentStats, setDeploymentStats] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  const loadDashboard = async () => {
-    setIsRefreshing(true);
+  const loadDashboard = useCallback(async (isSilent = false) => {
+    if (!isSilent) setIsRefreshing(true);
     try {
-      const res = await getDashboardSummary();
-      setStats(res.data);
+      const [sumRes, depRes] = await Promise.all([
+        getDashboardSummary(),
+        getDeploymentMetrics().catch(() => ({ data: { data: null } })),
+      ]);
+      setStats(sumRes.data);
+      if (depRes.data?.data) {
+        setDeploymentStats(depRes.data.data);
+      }
       setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
     } finally {
-      setIsRefreshing(false);
+      if (!isSilent) setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadDashboard();
-    const interval = setInterval(loadDashboard, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [loadDashboard]);
+
+  // Real-time Event Subscriptions via WebSockets
+  useSocketEvent("incident:created", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("incident:resolved", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("service:status", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("deployment:started", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("deployment:success", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("deployment:failed", () => {
+    loadDashboard(true);
+  });
+
+  useSocketEvent("kubernetes:pod", () => {
+    loadDashboard(true);
+  });
 
   if (!stats) {
     return (
@@ -160,58 +201,74 @@ export default function Dashboard() {
         <HealthDonutChart stats={stats} />
       </div>
 
-      {/* Uptime and Incidents Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 mb-6">
-        {/* Uptime Card */}
-        <div className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 hover:border-slate-600/60 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all duration-300 h-full min-h-[300px]">
-          <div>
-            <h3 className="text-lg font-bold text-white tracking-tight">System Reliability</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Overall historical performance</p>
-          </div>
-
-          <div className="my-4 flex flex-col items-center">
-            <div className="relative w-32 h-32 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="40" 
-                  className="stroke-slate-800" 
-                  strokeWidth="8" 
-                  fill="transparent" 
-                />
-                <circle 
-                  cx="50" 
-                  cy="50" 
-                  r="40" 
-                  className="stroke-emerald-500" 
-                  strokeWidth="8" 
-                  fill="transparent" 
-                  strokeDasharray="251.2"
-                  strokeDashoffset={251.2 * (1 - (parseFloat(stats.uptime || "100") / 100))}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-white">{stats.uptime || "100.00%"}</span>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">Uptime</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800/80 flex items-center gap-2.5">
-            <ShieldCheck className="text-emerald-400 shrink-0" size={18} />
-            <p className="text-xs text-slate-300 leading-normal">
-              Uptime meets SLA guarantees. Active health checks monitor server status.
-            </p>
-          </div>
-        </div>
-
-        {/* Incident Timeline (takes 2 columns) */}
-        <div className="lg:col-span-2">
+      {/* Incident Timeline, Live Activity Feed & Uptime Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8 mb-6">
+        {/* Incident Timeline (7 cols) */}
+        <div className="lg:col-span-7">
           <IncidentTimeline />
         </div>
+
+        {/* Live Activity Feed (5 cols) */}
+        <div className="lg:col-span-5">
+          <LiveActivityFeed maxHeight="max-h-[360px]" />
+        </div>
       </div>
+
+      {/* CI/CD & Deployments Quick Overview Row */}
+      {deploymentStats && (
+        <div className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-600/10 text-blue-400 rounded-xl border border-blue-500/20">
+                <Rocket size={22} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">CI/CD & Release Pipeline</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Automated Jenkins builds, Docker images & Kubernetes rollouts</p>
+              </div>
+            </div>
+
+            <Link
+              to="/deployments"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3.5 py-1.5 rounded-lg border border-blue-500/20 transition"
+            >
+              View All Deployments <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold">Deployments Today</div>
+              <div className="text-2xl font-black text-white mt-1">{deploymentStats.deploymentsToday || 0}</div>
+              <div className="text-[11px] text-slate-500 mt-1">Total: {deploymentStats.totalDeployments || 0}</div>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold">Change Failure Rate</div>
+              <div className={`text-2xl font-black mt-1 ${deploymentStats.changeFailureRate > 15 ? "text-amber-400" : "text-emerald-400"}`}>
+                {deploymentStats.changeFailureRate || 0}%
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">{deploymentStats.failedDeployments || 0} failed builds</div>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold">Mean Deployment Time</div>
+              <div className="text-2xl font-black text-emerald-400 mt-1">
+                {deploymentStats.avgDurationSeconds ? `${Math.floor(deploymentStats.avgDurationSeconds / 60)}m ${deploymentStats.avgDurationSeconds % 60}s` : "1m 45s"}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">Build to rollout</div>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold">Rollback Operations</div>
+              <div className="text-2xl font-black text-purple-400 mt-1">
+                {deploymentStats.rolledBackDeployments || 0}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">Rate: {deploymentStats.rollbackRate || 0}%</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

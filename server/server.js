@@ -1,9 +1,12 @@
+require("./src/config/telemetry");
 require("dotenv").config();
 
+const http = require("http");
 const app = require("./src/app");
 const pool = require("./src/config/database");
 const { checkServicesHealth } = require("./src/jobs/healthChecker");
 const { register } = require("./src/config/prometheus");
+const { initializeSocket } = require("./src/services/socket.service");
 
 const PORT = process.env.PORT || 5000;
 
@@ -12,7 +15,10 @@ const startServer = async () => {
         await pool.query("SELECT NOW()");
         console.log("PostgreSQL connected successfully");
 
-        app.listen(PORT, "0.0.0.0", () => {
+        const server = http.createServer(app);
+        initializeSocket(server);
+
+        server.listen(PORT, "0.0.0.0", () => {
             console.log(`CloudOps API running on port ${PORT}`);
         });
 

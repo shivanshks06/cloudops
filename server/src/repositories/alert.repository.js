@@ -51,6 +51,25 @@ const getRecentAlerts = async () => {
   return result.rows;
 };
 
+const findActiveAlertByTitle = async (serviceId, title) => {
+  const result = await pool.query(
+    "SELECT * FROM alerts WHERE service_id = $1 AND title = $2 AND status = 'active' LIMIT 1",
+    [serviceId, title]
+  );
+  return result.rows[0];
+};
+
+const resolveAlertByTitle = async (serviceId, title) => {
+  const result = await pool.query(
+    `UPDATE alerts 
+     SET status = 'resolved' 
+     WHERE service_id = $1 AND title = $2 AND status = 'active'
+     RETURNING *`,
+    [serviceId, title]
+  );
+  return result.rows[0];
+};
+
 const countActiveAlerts = async () => {
   const result = await pool.query(
     `SELECT COUNT(*) FROM alerts WHERE status = 'active'`
@@ -60,9 +79,11 @@ const countActiveAlerts = async () => {
 
 module.exports = {
   findActiveAlert,
+  findActiveAlertByTitle,
   createAlert,
   acknowledgeAlert,
   resolveAlert,
+  resolveAlertByTitle,
   getRecentAlerts,
   countActiveAlerts,
 };

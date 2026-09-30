@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { 
-  Monitor, 
-  Globe, 
-  ShieldAlert, 
+import {
+  Monitor,
+  Globe,
+  ShieldAlert,
   Save,
   CheckCircle2,
   Cpu,
@@ -11,11 +11,33 @@ import {
   ExternalLink,
   X,
   Activity,
-  Boxes
+  Boxes,
+  Bell,
+  Send,
+  MessageSquare,
+  Mail,
+  FolderPlus,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
-import { resetData } from "../services/api";
+import { resetData, updateProject } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Settings() {
+  const { activeProject, refreshProjects, user } = useAuth();
+
+  // Workspace integration state
+  const [projectName, setProjectName] = useState("");
+  const [projectDesc, setProjectDesc] = useState("");
+  const [slackWebhook, setSlackWebhook] = useState("");
+  const [discordWebhook, setDiscordWebhook] = useState("");
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [projectSaving, setProjectSaving] = useState(false);
+  const [projectSaveSuccess, setProjectSaveSuccess] = useState(false);
+  const [testSlackStatus, setTestSlackStatus] = useState(null);
+  const [testDiscordStatus, setTestDiscordStatus] = useState(null);
+
+  // System environment state
   const [interval, setIntervalTime] = useState(() => localStorage.getItem("cloudops_interval") || "30s");
   const [timeout, setTimeoutVal] = useState(() => localStorage.getItem("cloudops_timeout") || "5000");
   const [theme, setTheme] = useState(() => localStorage.getItem("cloudops_theme") || "dark");
@@ -27,6 +49,16 @@ export default function Settings() {
   const [k8sTestSuccess, setK8sTestSuccess] = useState(false);
 
   useEffect(() => {
+    if (activeProject) {
+      setProjectName(activeProject.name || "");
+      setProjectDesc(activeProject.description || "");
+      setSlackWebhook(activeProject.slack_webhook_url || "");
+      setDiscordWebhook(activeProject.discord_webhook_url || "");
+      setEmailNotifs(activeProject.email_notifications !== false);
+    }
+  }, [activeProject]);
+
+  useEffect(() => {
     if (theme === "light") {
       document.documentElement.classList.add("light-theme");
     } else {
@@ -34,7 +66,78 @@ export default function Settings() {
     }
   }, [theme]);
 
-  const handleSave = () => {
+  const handleSaveProjectSettings = async (e) => {
+    e.preventDefault();
+    if (!activeProject?.id) return;
+    setProjectSaving(true);
+    setProjectSaveSuccess(false);
+
+    try {
+      await updateProject(activeProject.id, {
+        name: projectName.trim(),
+        description: projectDesc.trim(),
+        slack_webhook_url: slackWebhook.trim() || null,
+        discord_webhook_url: discordWebhook.trim() || null,
+        email_notifications: emailNotifs,
+      });
+      await refreshProjects();
+      setProjectSaveSuccess(true);
+      setTimeout(() => setProjectSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to update project settings:", err);
+      alert(err.response?.data?.message || "Failed to update project settings.");
+    } finally {
+      setProjectSaving(false);
+    }
+  };
+
+  const handleTestSlack = async () => {
+    if (!slackWebhook.trim()) {
+      alert("Please enter a valid Slack webhook URL first.");
+      return;
+    }
+    setTestSlackStatus("testing");
+    try {
+      await fetch(slackWebhook, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: `🟢 *CloudOps Test Notification* from workspace *${activeProject?.name || "Production"}*\nSlack alert integration is active and operating properly!`,
+        }),
+      });
+      setTestSlackStatus("success");
+    } catch (err) {
+      setTestSlackStatus("error");
+    } finally {
+      setTimeout(() => setTestSlackStatus(null), 4000);
+    }
+  };
+
+  const handleTestDiscord = async () => {
+    if (!discordWebhook.trim()) {
+      alert("Please enter a valid Discord webhook URL first.");
+      return;
+    }
+    setTestDiscordStatus("testing");
+    try {
+      await fetch(discordWebhook, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `🟢 **CloudOps Test Notification** from workspace **${activeProject?.name || "Production"}**\nDiscord alert integration is active and operating properly!`,
+        }),
+      });
+      setTestDiscordStatus("success");
+    } catch (err) {
+      setTestDiscordStatus("error");
+    } finally {
+      setTimeout(() => setTestDiscordStatus(null), 4000);
+    }
+  };
+
+  const handleSaveSystem = () => {
     setIsSaving(true);
     localStorage.setItem("cloudops_interval", interval);
     localStorage.setItem("cloudops_timeout", timeout);
@@ -48,14 +151,18 @@ export default function Settings() {
   };
 
   const handleReset = async () => {
-    if (window.confirm("Are you sure you want to delete all historical metrics, alerts, and incidents? This action cannot be undone.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete all historical metrics, alerts, and incidents? This action cannot be undone."
+      )
+    ) {
       setIsResetting(true);
       try {
         await resetData();
-        alert("Demo data has been cleanly reset.");
+        alert("Data has been cleanly reset.");
       } catch (err) {
         console.error(err);
-        alert("Failed to reset demo data.");
+        alert("Failed to reset data.");
       } finally {
         setIsResetting(false);
       }
@@ -74,49 +181,196 @@ export default function Settings() {
   return (
     <div className="w-full max-w-5xl mx-auto px-2 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Settings</h1>
-          <p className="text-slate-400 mt-1.5 text-sm">Manage your workspace configuration and preferences</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Workspace & System Settings</h1>
+          <p className="text-slate-400 mt-1 text-xs">
+            Configure notification channels, workspace integrations, and global monitoring preferences
+          </p>
         </div>
-
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition duration-200 cursor-pointer w-fit"
-        >
-          {isSaving ? (
-             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-b-white"></div>
-          ) : saveSuccess ? (
-             <CheckCircle2 size={16} />
-          ) : (
-             <Save size={16} />
-          )}
-          {isSaving ? "Saving..." : saveSuccess ? "Saved!" : "Save Changes"}
-        </button>
       </div>
 
       <div className="flex flex-col gap-8">
-        
-        {/* 1. Environment */}
-        <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <Globe className="text-blue-400" size={20} />
+        {/* 1. Project & Notification Channels */}
+        <section className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-3xl shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  Active Workspace: <span className="text-blue-400">{activeProject?.name || "Default Project"}</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Configure Slack, Discord, and Email alerts for this workspace
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Environment</h2>
-              <p className="text-xs text-slate-400">Configure global monitoring parameters</p>
+
+            <button
+              onClick={handleSaveProjectSettings}
+              disabled={projectSaving}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition duration-200 cursor-pointer"
+            >
+              {projectSaving ? (
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-b-white"></div>
+              ) : projectSaveSuccess ? (
+                <CheckCircle2 size={14} />
+              ) : (
+                <Save size={14} />
+              )}
+              {projectSaving ? "Saving..." : projectSaveSuccess ? "Saved!" : "Save Workspace"}
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Workspace Name & Description */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Workspace / Project Name</label>
+                <input
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="e.g. My E-commerce App"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                <input
+                  type="text"
+                  value={projectDesc}
+                  onChange={(e) => setProjectDesc(e.target.value)}
+                  placeholder="Production infrastructure & APIs"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Slack Webhook */}
+            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">💬</span>
+                  <div>
+                    <label className="text-xs font-bold text-slate-200 block">Slack Webhook URL</label>
+                    <span className="text-[11px] text-slate-500">
+                      Receive incident alerts and status changes in your Slack channel (e.g. #production-alerts)
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestSlack}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Send size={11} />
+                  {testSlackStatus === "testing" ? "Testing..." : testSlackStatus === "success" ? "Sent!" : "Test Slack Ping"}
+                </button>
+              </div>
+
+              <input
+                type="url"
+                value={slackWebhook}
+                onChange={(e) => setSlackWebhook(e.target.value)}
+                placeholder="https://hooks.slack.com/services/YOUR_WORKSPACE_WEBHOOK"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono placeholder-slate-600 focus:outline-none focus:border-blue-500 transition"
+              />
+            </div>
+
+            {/* Discord Webhook */}
+            <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🎮</span>
+                  <div>
+                    <label className="text-xs font-bold text-slate-200 block">Discord Webhook URL</label>
+                    <span className="text-[11px] text-slate-500">
+                      Broadcast incident notifications to a Discord channel
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestDiscord}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Send size={11} />
+                  {testDiscordStatus === "testing" ? "Testing..." : testDiscordStatus === "success" ? "Sent!" : "Test Discord Ping"}
+                </button>
+              </div>
+
+              <input
+                type="url"
+                value={discordWebhook}
+                onChange={(e) => setDiscordWebhook(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono placeholder-slate-600 focus:outline-none focus:border-blue-500 transition"
+              />
+            </div>
+
+            {/* Email Notifications Toggle */}
+            <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <Mail size={16} className="text-indigo-400" />
+                <div>
+                  <span className="text-xs font-semibold text-slate-200 block">Email Incident Reports</span>
+                  <span className="text-[10px] text-slate-500">
+                    Send daily SRE summary and critical downtime events to {user?.email || "registered email"}
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={emailNotifs}
+                onChange={(e) => setEmailNotifs(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded bg-slate-800 border-slate-700 cursor-pointer"
+              />
             </div>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-300">Monitoring Interval</label>
-              <p className="text-xs text-slate-500 mb-3">How often health checks are executed.</p>
-              <select 
+        </section>
+
+        {/* 2. Global Monitoring & Appearance */}
+        <section className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-3xl shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-purple-500/10 rounded-xl border border-purple-500/20 text-purple-400">
+                <Monitor size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">System & UI Preferences</h2>
+                <p className="text-xs text-slate-400">Configure global interval, timeout & theme</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveSystem}
+              disabled={isSaving}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition duration-200 cursor-pointer"
+            >
+              {isSaving ? (
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-b-white"></div>
+              ) : saveSuccess ? (
+                <CheckCircle2 size={14} className="text-emerald-400" />
+              ) : (
+                <Save size={14} />
+              )}
+              {isSaving ? "Saving..." : saveSuccess ? "Saved!" : "Save Preferences"}
+            </button>
+          </div>
+
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Default Interval</label>
+              <select
                 value={interval}
                 onChange={(e) => setIntervalTime(e.target.value)}
-                className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-blue-500 transition"
               >
                 <option value="10s">10 Seconds</option>
                 <option value="30s">30 Seconds</option>
@@ -124,37 +378,23 @@ export default function Settings() {
                 <option value="5m">5 Minutes</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-300">Global Timeout (ms)</label>
-              <p className="text-xs text-slate-500 mb-3">Maximum wait time before a service is considered down.</p>
-              <input 
-                type="number" 
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Global Timeout (ms)</label>
+              <input
+                type="number"
                 value={timeout}
                 onChange={(e) => setTimeoutVal(e.target.value)}
-                className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-blue-500 transition"
               />
             </div>
-          </div>
-        </section>
 
-        {/* 2. Appearance */}
-        <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
-            <div className="p-2 bg-purple-500/10 rounded-lg">
-              <Monitor className="text-purple-400" size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Appearance</h2>
-              <p className="text-xs text-slate-400">Customize dashboard UI</p>
-            </div>
-          </div>
-          <div className="p-6">
-             <div className="space-y-2 max-w-md">
-              <label className="text-sm font-semibold text-slate-300">Theme Preference</label>
-              <select 
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Theme Preference</label>
+              <select
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-blue-500 transition"
               >
                 <option value="dark">Dark Slate</option>
                 <option value="light">Light Mode</option>
@@ -164,93 +404,91 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* 3. Integrations */}
-        <section className="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-700/50 flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 rounded-lg">
-              <Cpu className="text-emerald-400" size={20} />
+        {/* 3. Infrastructure Integrations */}
+        <section className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-3xl shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-400">
+              <Cpu size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Integrations</h2>
-              <p className="text-xs text-slate-400">Connect third-party infrastructure</p>
+              <h2 className="text-lg font-bold text-white">Infrastructure Integrations</h2>
+              <p className="text-xs text-slate-400">Connected telemetry & orchestration systems</p>
             </div>
           </div>
           <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Prometheus */}
-            <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center">
-              <div className="h-12 w-12 bg-orange-500/10 rounded-full flex items-center justify-center mb-3">
+            <div className="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl flex flex-col items-center text-center">
+              <div className="h-12 w-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-3">
                 <Database className="text-orange-500" size={24} />
               </div>
-              <h3 className="text-white font-bold mb-1">Prometheus</h3>
-              <p className="text-xs text-slate-400 mb-4">Time-series data aggregation</p>
-              <button 
-                onClick={() => window.open("http://localhost:9090", "_blank")}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-white rounded-lg transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer font-medium"
+              <h3 className="text-white font-bold text-sm mb-1">Prometheus</h3>
+              <p className="text-xs text-slate-400 mb-4">Port 9091 time-series metrics</p>
+              <button
+                onClick={() => window.open("http://localhost:9091", "_blank")}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-white rounded-xl transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer font-semibold"
               >
                 Connected <ExternalLink size={12} />
               </button>
             </div>
 
             {/* Grafana */}
-            <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center">
-              <div className="h-12 w-12 bg-yellow-500/10 rounded-full flex items-center justify-center mb-3">
+            <div className="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl flex flex-col items-center text-center">
+              <div className="h-12 w-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center mb-3">
                 <Database className="text-yellow-500" size={24} />
               </div>
-              <h3 className="text-white font-bold mb-1">Grafana</h3>
-              <p className="text-xs text-slate-400 mb-4">Advanced metrics visualization</p>
-              <button 
-                onClick={() => window.open("http://localhost:3001", "_blank")}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-white rounded-lg transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer font-medium"
+              <h3 className="text-white font-bold text-sm mb-1">Grafana</h3>
+              <p className="text-xs text-slate-400 mb-4">Port 3002 dashboards</p>
+              <button
+                onClick={() => window.open("http://localhost:3002", "_blank")}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-white rounded-xl transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer font-semibold"
               >
                 Connected <ExternalLink size={12} />
               </button>
             </div>
 
-             {/* Kubernetes - Working & Interactive */}
-             <div className="bg-slate-900/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center text-center relative">
-              <div className="h-12 w-12 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
+            {/* Kubernetes */}
+            <div className="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl flex flex-col items-center text-center">
+              <div className="h-12 w-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-3">
                 <Server className="text-blue-500" size={24} />
               </div>
-              <h3 className="text-white font-bold mb-1">Kubernetes</h3>
-              <p className="text-xs text-slate-400 mb-4">Cluster health & Pod syncing</p>
-              <button 
+              <h3 className="text-white font-bold text-sm mb-1">Kubernetes</h3>
+              <p className="text-xs text-slate-400 mb-4">Cluster health & Pod sync</p>
+              <button
                 onClick={() => setIsK8sModalOpen(true)}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs text-white font-semibold rounded-lg transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-xs text-white font-semibold rounded-xl transition-colors w-full flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20"
               >
-                <Activity size={13} /> View Cluster Status
+                <Activity size={13} /> View Cluster
               </button>
             </div>
           </div>
         </section>
 
         {/* 4. Danger Zone */}
-        <section className="border border-red-500/30 rounded-2xl overflow-hidden relative">
-           <div className="absolute inset-0 bg-red-500/5 z-0 pointer-events-none"></div>
-           
-           <div className="relative z-10 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-             <div className="flex items-start gap-4">
-               <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20 mt-1 md:mt-0">
-                 <ShieldAlert className="text-red-500" size={24} />
-               </div>
-               <div>
-                 <h2 className="text-xl font-bold text-red-400">Danger Zone</h2>
-                 <p className="text-sm text-slate-400 mt-1 max-w-xl">
-                   Resetting demo data will delete all currently tracked historical metrics, incidents, and alerts from the database. This action is irreversible.
-                 </p>
-               </div>
-             </div>
-             <button
-               onClick={handleReset}
-               disabled={isResetting}
-               className="shrink-0 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold rounded-xl transition-colors focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 flex items-center justify-center min-w-[160px] cursor-pointer"
-             >
-               {isResetting ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-400/20 border-b-red-400"></div>
-               ) : (
-                 "Reset Demo Data"
-               )}
-             </button>
-           </div>
+        <section className="border border-rose-500/30 rounded-3xl overflow-hidden relative bg-rose-500/5">
+          <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 mt-1 md:mt-0">
+                <ShieldAlert className="text-rose-500" size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-rose-400">Danger Zone</h2>
+                <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                  Resetting demo data will delete all currently tracked historical metrics, incidents, and alerts from the database. This action is irreversible.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleReset}
+              disabled={isResetting}
+              className="shrink-0 px-5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-xl transition-colors focus:ring-2 focus:ring-rose-500/50 disabled:opacity-50 flex items-center justify-center min-w-[160px] cursor-pointer"
+            >
+              {isResetting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-rose-400/20 border-b-rose-400"></div>
+              ) : (
+                "Reset Demo Data"
+              )}
+            </button>
+          </div>
         </section>
       </div>
 
@@ -265,10 +503,12 @@ export default function Settings() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">Kubernetes Cluster Status</h3>
-                  <p className="text-xs text-slate-400">Namespace: <span className="text-blue-400 font-mono">cloudops</span></p>
+                  <p className="text-xs text-slate-400">
+                    Namespace: <span className="text-blue-400 font-mono">cloudops</span>
+                  </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsK8sModalOpen(false)}
                 className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
               >
@@ -296,7 +536,7 @@ export default function Settings() {
 
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Deployments</h4>
-                
+
                 <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Server size={16} className="text-blue-400" />
@@ -305,7 +545,9 @@ export default function Settings() {
                       <p className="text-[10px] text-slate-500">NodePort 30090 / Port 5000</p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">2/2 Replicas</span>
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                    2/2 Replicas
+                  </span>
                 </div>
 
                 <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
@@ -316,7 +558,9 @@ export default function Settings() {
                       <p className="text-[10px] text-slate-500">Ingress / Port 80</p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">2/2 Replicas</span>
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                    2/2 Replicas
+                  </span>
                 </div>
               </div>
             </div>
@@ -350,4 +594,3 @@ export default function Settings() {
     </div>
   );
 }
-

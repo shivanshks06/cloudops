@@ -1,0 +1,32 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "cloudops-and-slack"
+  group_by:
+    - alertname
+    - job
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+
+receivers:
+  - name: "cloudops-and-slack"
+    webhook_configs:
+      - url: "http://host.docker.internal:30090/api/alertmanager"
+        send_resolved: true
+
+    slack_configs:
+      - api_url_file: "/etc/alertmanager/slack_url"
+        channel: "#cloudops-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
+        title: '{{ if eq .Status "firing" }}🚨 [FIRING - {{ .CommonLabels.severity | toUpper }}]{{ else }}✅ [RESOLVED]{{ end }} {{ .CommonLabels.alertname }} ({{ if .CommonLabels.service }}{{ .CommonLabels.service }}{{ else }}{{ .CommonLabels.job }}{{ end }})'
+        text: >-
+          {{ range .Alerts }}
+            *Alert:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Service:* `{{ if .Labels.service }}{{ .Labels.service }}{{ else }}{{ .Labels.job }}{{ end }}` | *Severity:* `{{ .Labels.severity }}`
+            *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+            {{ if eq .Status "resolved" }}*Resolved:* {{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}{{ end }}
+          {{ end }}
