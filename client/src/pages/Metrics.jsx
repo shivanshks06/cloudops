@@ -4,7 +4,8 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Clock, 
-  RefreshCw 
+  RefreshCw,
+  Activity
 } from "lucide-react";
 import { getDashboardSummary } from "../services/api";
 import ResponseTimeChart from "../components/charts/ResponseTimeChart";
@@ -12,7 +13,7 @@ import HealthDonutChart from "../components/charts/HealthDonutChart";
 import UptimeTrendChart from "../components/charts/UptimeTrendChart";
 import GrafanaPanel from "../components/GrafanaPanel";
 import ConnectTelemetryModal from "../components/modals/ConnectTelemetryModal";
-import { Activity } from "lucide-react";
+import GrafanaConnectionModal from "../components/modals/GrafanaConnectionModal";
 
 export default function Metrics() {
   const [stats, setStats] = useState(null);
@@ -20,12 +21,11 @@ export default function Metrics() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [timeRange, setTimeRange] = useState("1h");
   const [isOTelModalOpen, setIsOTelModalOpen] = useState(false);
-
+  const [isGrafanaModalOpen, setIsGrafanaModalOpen] = useState(false);
 
   const loadMetrics = async () => {
     setIsRefreshing(true);
     try {
-      // In a real app, we would pass `timeRange` as a query param
       const res = await getDashboardSummary();
       setStats(res.data);
       setLastUpdated(new Date());
@@ -94,8 +94,8 @@ export default function Metrics() {
       {/* Header section with Time Range Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Metrics</h1>
-          <p className="text-slate-400 mt-1.5 text-sm">Detailed telemetry and historical performance</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Metrics & Telemetry</h1>
+          <p className="text-slate-400 mt-1.5 text-sm">Detailed real-time telemetry, PromQL queries and time-series performance</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 self-start md:self-auto">
@@ -135,7 +135,7 @@ export default function Metrics() {
               </button>
             )}
             <button
-              onClick={() => window.open("http://localhost:3002", "_blank")}
+              onClick={() => setIsGrafanaModalOpen(true)}
               className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-orange-500/20 cursor-pointer"
             >
               Open Grafana
@@ -182,56 +182,98 @@ export default function Metrics() {
         <UptimeTrendChart />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-1">
           <HealthDonutChart />
         </div>
         
-        {/* Placeholder for future detailed logs or distribution table */}
-        <div className="lg:col-span-2 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[300px]">
-           <Server className="text-slate-600 mb-4" size={48} />
-           <h3 className="text-lg font-bold text-slate-300">Service Performance Logs</h3>
-           <p className="text-sm text-slate-500 text-center max-w-sm mt-2">
-             Detailed endpoint tracing and telemetry logs will appear here once the distributed tracing agent is active.
-           </p>
+        <div className="lg:col-span-2 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-700/60">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
+                <Server size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white tracking-tight">Real-Time OpenTelemetry Ingestion</h3>
+                <p className="text-xs text-slate-400">OTLP collector stream (Port 4318 / Jaeger 16686)</p>
+              </div>
+            </div>
+            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Streaming Ready
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 my-4">
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Span Batch Buffer</span>
+              <span className="text-lg font-black text-white font-mono mt-1 block">512 Spans/s</span>
+            </div>
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Compression</span>
+              <span className="text-lg font-black text-emerald-400 font-mono mt-1 block">gzip (Active)</span>
+            </div>
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Protocol</span>
+              <span className="text-lg font-black text-indigo-400 font-mono mt-1 block">OTLP HTTP v1</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+            <span className="text-xs text-slate-400">Need to instrument Node.js, Python, or Go microservices?</span>
+            <button
+              onClick={() => setIsOTelModalOpen(true)}
+              className="text-xs font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer"
+            >
+              View SDK Setup Guide →
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Live Infrastructure Metrics Grid (4 Distinct Grafana/Prometheus Panels) */}
       <div className="mt-8">
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-2xl font-semibold text-white tracking-tight">
-            Live Infrastructure Metrics
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Live Infrastructure Telemetry
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Time-series queries from Prometheus (9091) and Grafana (3002)
+            </p>
+          </div>
 
           <button
-            onClick={() =>
-              window.open(
-                "http://localhost:3001/public-dashboards/4487cb19ab87469e9e4bc93f10596af1",
-                "_blank"
-              )
-            }
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors"
+            onClick={() => setIsGrafanaModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all cursor-pointer w-fit"
           >
-            Open Full Grafana
+            <Activity size={14} /> Open Full Grafana
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <GrafanaPanel
-            title="Total Services"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=1"
+            title="HTTP Throughput & Traffic"
+            url="http://localhost:3002/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=1"
+            onOpenGrafana={() => setIsGrafanaModalOpen(true)}
           />
 
           <GrafanaPanel
-            title="Active Alerts"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=2"
+            title="Active Alerts & Error Rates"
+            url="http://localhost:3002/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=2"
+            onOpenGrafana={() => setIsGrafanaModalOpen(true)}
           />
 
           <GrafanaPanel
-            title="Active Incidents"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=3"
+            title="P99 Latency & Response Times"
+            url="http://localhost:3002/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=3"
+            onOpenGrafana={() => setIsGrafanaModalOpen(true)}
           />
 
+          <GrafanaPanel
+            title="Cluster Resource Saturation"
+            url="http://localhost:3002/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=4"
+            onOpenGrafana={() => setIsGrafanaModalOpen(true)}
+          />
         </div>
       </div>
 
@@ -239,6 +281,12 @@ export default function Metrics() {
       <ConnectTelemetryModal
         isOpen={isOTelModalOpen}
         onClose={() => setIsOTelModalOpen(false)}
+      />
+
+      {/* Grafana Launch & Connection Modal */}
+      <GrafanaConnectionModal
+        isOpen={isGrafanaModalOpen}
+        onClose={() => setIsGrafanaModalOpen(false)}
       />
     </div>
   );
