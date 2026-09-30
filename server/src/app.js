@@ -64,11 +64,26 @@ app.get("/", (req, res) => {
 
 const healthRoutes = require("./routes/health.routes");
 const { register } = require("./config/prometheus");
+const serviceRepository = require("./repositories/service.repository");
+const alertRepository = require("./repositories/alert.repository");
+const incidentRepository = require("./repositories/incident.repository");
+const { totalServices, activeAlerts, activeIncidents } = require("./config/customMetrics");
 
 app.use("/health", healthRoutes);
 
 app.get("/metrics", async (req, res) => {
     try {
+        try {
+            const [services, alerts, incidents] = await Promise.all([
+                serviceRepository.getAllServices ? serviceRepository.getAllServices().catch(() => []) : Promise.resolve([]),
+                alertRepository.getActiveAlerts ? alertRepository.getActiveAlerts().catch(() => []) : Promise.resolve([]),
+                incidentRepository.getOpenIncidents ? incidentRepository.getOpenIncidents().catch(() => []) : Promise.resolve([]),
+            ]);
+            if (Array.isArray(services)) totalServices.set(services.length);
+            if (Array.isArray(alerts)) activeAlerts.set(alerts.length);
+            if (Array.isArray(incidents)) activeIncidents.set(incidents.length);
+        } catch {}
+
         res.set("Content-Type", register.contentType);
         res.end(await register.metrics());
     } catch (err) {
