@@ -269,10 +269,19 @@ export default function Settings() {
                   <div>
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-bold text-slate-200 block">Slack Webhook URL</label>
+                      {slackWebhook.trim() ? (
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          🟢 Connected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-500 bg-slate-800/80 px-2 py-0.5 rounded-md">
+                          ⚪ Not Connected
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => setIsNotifGuideOpen(true)}
-                        className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+                        className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer ml-1"
                       >
                         How to get Slack URL?
                       </button>
@@ -289,7 +298,7 @@ export default function Settings() {
                     onClick={() => setIsNotifGuideOpen(true)}
                     className="px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-xs text-blue-400 font-semibold rounded-xl border border-blue-500/30 transition flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
-                    📖 Guide
+                    {slackWebhook.trim() ? "📖 Setup Guide" : "⚡ Connect Slack"}
                   </button>
                   <button
                     type="button"
@@ -319,10 +328,19 @@ export default function Settings() {
                   <div>
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-bold text-slate-200 block">Discord Webhook URL</label>
+                      {discordWebhook.trim() ? (
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          🟢 Connected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-500 bg-slate-800/80 px-2 py-0.5 rounded-md">
+                          ⚪ Not Connected
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => setIsNotifGuideOpen(true)}
-                        className="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer"
+                        className="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer ml-1"
                       >
                         How to get Discord URL?
                       </button>
@@ -339,7 +357,7 @@ export default function Settings() {
                     onClick={() => setIsNotifGuideOpen(true)}
                     className="px-2.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-xs text-indigo-400 font-semibold rounded-xl border border-indigo-500/30 transition flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
-                    📖 Guide
+                    {discordWebhook.trim() ? "📖 Setup Guide" : "⚡ Connect Discord"}
                   </button>
                   <button
                     type="button"
@@ -472,18 +490,21 @@ export default function Settings() {
                   <Server className="text-blue-500" size={24} />
                 </div>
                 <h3 className="text-white font-bold text-sm mb-1">Kubernetes Cluster</h3>
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 mb-2 inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected
+                </span>
                 <p className="text-xs text-slate-400 mb-4">Live Pods, Nodes & Deployments sync</p>
               </div>
               <div className="w-full space-y-2">
                 <button
                   onClick={() => setIsClusterGuideOpen(true)}
-                  className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs text-white font-bold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20"
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-bold rounded-xl border border-slate-700 transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  ⚡ Connect Guide
+                  ⚙️ Switch / Reconnect
                 </button>
                 <button
                   onClick={() => setIsK8sModalOpen(true)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-300 font-semibold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-[11px] text-blue-400 font-semibold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Activity size={12} /> Status & Details
                 </button>
@@ -497,13 +518,16 @@ export default function Settings() {
                   <Boxes className="text-purple-400" size={24} />
                 </div>
                 <h3 className="text-white font-bold text-sm mb-1">CI/CD Pipelines</h3>
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 mb-2 inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active (Webhooks)
+                </span>
                 <p className="text-xs text-slate-400 mb-4">GitHub Actions, Jenkins & Webhooks</p>
               </div>
               <button
                 onClick={() => setIsCICDGuideOpen(true)}
                 className="px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-xs text-purple-300 font-bold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                ⚡ Connect CI/CD
+                ⚙️ CI/CD Setup & Webhooks
               </button>
             </div>
 
@@ -514,13 +538,16 @@ export default function Settings() {
                   <Activity className="text-cyan-400" size={24} />
                 </div>
                 <h3 className="text-white font-bold text-sm mb-1">OpenTelemetry</h3>
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 mb-2 inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Ingestion Active
+                </span>
                 <p className="text-xs text-slate-400 mb-4">OTLP metrics, traces & spans ingestion</p>
               </div>
               <button
                 onClick={() => setIsOTelGuideOpen(true)}
                 className="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-xs text-cyan-300 font-bold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                ⚡ Connect OTel
+                ⚙️ Configure OTel & Collector
               </button>
             </div>
 
@@ -531,13 +558,22 @@ export default function Settings() {
                   <Bell className="text-emerald-400" size={24} />
                 </div>
                 <h3 className="text-white font-bold text-sm mb-1">Alert Channels</h3>
+                {slackWebhook.trim() || discordWebhook.trim() ? (
+                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 mb-2 inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active ({[slackWebhook.trim() && "Slack", discordWebhook.trim() && "Discord"].filter(Boolean).join(", ")})
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold text-slate-500 bg-slate-800/80 px-2.5 py-0.5 rounded-full mb-2 inline-block">
+                    ⚪ Not Configured
+                  </span>
+                )}
                 <p className="text-xs text-slate-400 mb-4">Slack & Discord instant incident dispatch</p>
               </div>
               <button
                 onClick={() => setIsNotifGuideOpen(true)}
                 className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs text-emerald-300 font-bold rounded-xl transition w-full flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                📖 Webhook Guide
+                {slackWebhook.trim() || discordWebhook.trim() ? "⚙️ Manage Alert Channels" : "⚡ Connect Slack & Discord"}
               </button>
             </div>
           </div>

@@ -181,12 +181,23 @@ export default function Kubernetes() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsConnectModalOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition cursor-pointer"
-          >
-            <Boxes size={15} /> Connect Cluster
-          </button>
+          {nodes.length > 0 ? (
+            <button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700/80 transition cursor-pointer"
+              title="Cluster active. Click to view Helm token or switch cluster."
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Cluster Connected
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition cursor-pointer"
+            >
+              <Boxes size={15} /> Connect Cluster
+            </button>
+          )}
           <LiveIndicator />
           <button
             onClick={() => loadData()}
@@ -200,23 +211,23 @@ export default function Kubernetes() {
       {/* Cluster Connection Info Banner */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
-            <Layers size={18} />
+          <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+            <CheckCircle2 size={18} />
           </div>
           <div>
             <span className="text-xs font-bold text-white block">
-              Cluster Mode: <span className="text-emerald-400 font-mono">Interactive Live Telemetry & Sandbox</span>
+              Cluster Status: <span className="text-emerald-400 font-mono">Connected & Telemetry Streaming</span>
             </span>
             <span className="text-[11px] text-slate-400">
-              Inspecting pods, deployments & auto-scalers. Need to connect your AWS EKS / GKE / Cloud cluster?
+              Synced with <span className="text-slate-200 font-semibold">{overview?.clusterName || "cloudops-kind"}</span> ({nodes.length} nodes, {pods.length} pods, {deployments.length} deployments).
             </span>
           </div>
         </div>
         <button
           onClick={() => setIsConnectModalOpen(true)}
-          className="text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3.5 py-1.5 rounded-xl border border-blue-500/20 transition cursor-pointer shrink-0"
+          className="text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3.5 py-1.5 rounded-xl border border-slate-700 transition cursor-pointer shrink-0"
         >
-          View Connection Guide →
+          Manage / Switch Cluster →
         </button>
       </div>
 

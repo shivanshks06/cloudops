@@ -117,12 +117,23 @@ export default function Metrics() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsOTelModalOpen(true)}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-amber-500/20 cursor-pointer"
-            >
-              <Activity size={13} /> Connect OpenTelemetry
-            </button>
+            {stats.totalServices > 0 ? (
+              <button
+                onClick={() => setIsOTelModalOpen(true)}
+                className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700/80 transition cursor-pointer"
+                title="Click to view OpenTelemetry collector YAML or SDK snippet"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Telemetry Active
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsOTelModalOpen(true)}
+                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-amber-500/20 cursor-pointer"
+              >
+                <Activity size={13} /> Connect OpenTelemetry
+              </button>
+            )}
             <button
               onClick={() => window.open("http://localhost:3002", "_blank")}
               className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-orange-500/20 cursor-pointer"

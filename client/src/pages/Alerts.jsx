@@ -2,14 +2,18 @@ import { useState, useEffect, useMemo } from "react";
 import { ShieldAlert, AlertTriangle, CheckCircle, BellRing, Inbox, Clock, Activity, AlertCircle, Bell } from "lucide-react";
 
 import { getAlerts, acknowledgeAlert } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import ConnectNotificationsModal from "../components/modals/ConnectNotificationsModal";
 
 export default function Alerts() {
+  const { activeProject } = useAuth();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("active");
   const [processingId, setProcessingId] = useState(null);
   const [isNotifGuideOpen, setIsNotifGuideOpen] = useState(false);
+  
+  const hasAlertsConnected = Boolean(activeProject?.slack_webhook_url || activeProject?.discord_webhook_url);
 
   const loadAlerts = async () => {
     try {
@@ -115,13 +119,24 @@ export default function Alerts() {
           <p className="text-slate-400 mt-2 text-sm">Monitor, acknowledge, and resolve active infrastructure alerts</p>
         </div>
 
-        <button
-          onClick={() => setIsNotifGuideOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 transition duration-200 cursor-pointer w-fit"
-        >
-          <Bell size={14} />
-          ⚡ Connect Slack / Discord
-        </button>
+        {hasAlertsConnected ? (
+          <button
+            onClick={() => setIsNotifGuideOpen(true)}
+            className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-700/80 transition duration-200 cursor-pointer w-fit"
+            title="Alert channels active. Click to view guide or add more webhooks."
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Alert Webhooks Connected
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsNotifGuideOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 transition duration-200 cursor-pointer w-fit"
+          >
+            <Bell size={14} />
+            ⚡ Connect Slack / Discord
+          </button>
+        )}
       </div>
 
       {/* Modern Filter Bar */}

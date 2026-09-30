@@ -247,12 +247,23 @@ export default function Deployments() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsConnectModalOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 transition cursor-pointer"
-          >
-            <Rocket size={14} /> Connect CI/CD Pipeline
-          </button>
+          {deployments.length > 0 ? (
+            <button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700/80 transition cursor-pointer"
+              title="Click to view CI/CD integration guide or webhook instructions"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              CI/CD Connected
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 transition cursor-pointer"
+            >
+              <Rocket size={14} /> Connect CI/CD Pipeline
+            </button>
+          )}
           <LiveIndicator />
           <button
             onClick={() => loadData()}
@@ -264,7 +275,7 @@ export default function Deployments() {
             onClick={() => setShowTriggerModal(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/25 transition cursor-pointer"
           >
-            <Plus size={15} /> + New Deployment
+            <Plus size={15} /> New Deployment
           </button>
         </div>
       </div>
