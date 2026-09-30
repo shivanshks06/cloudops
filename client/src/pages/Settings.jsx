@@ -20,7 +20,7 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { resetData, updateProject } from "../services/api";
+import { resetData, updateProject, testProjectWebhook } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ConnectNotificationsModal from "../components/modals/ConnectNotificationsModal";
 import ConnectClusterModal from "../components/modals/ConnectClusterModal";
@@ -28,7 +28,7 @@ import ConnectCICDModal from "../components/modals/ConnectCICDModal";
 import ConnectTelemetryModal from "../components/modals/ConnectTelemetryModal";
 
 export default function Settings() {
-  const { activeProject, refreshProjects, user } = useAuth();
+  const { activeProject, setActiveProject, refreshProjects, user } = useAuth();
 
   // Workspace integration state
   const [projectName, setProjectName] = useState("");
@@ -84,13 +84,16 @@ export default function Settings() {
     setProjectSaveSuccess(false);
 
     try {
-      await updateProject(activeProject.id, {
+      const res = await updateProject(activeProject.id, {
         name: projectName.trim(),
         description: projectDesc.trim(),
         slack_webhook_url: slackWebhook.trim() || null,
         discord_webhook_url: discordWebhook.trim() || null,
         email_notifications: emailNotifs,
       });
+      if (res.data?.data) {
+        setActiveProject(res.data.data);
+      }
       await refreshProjects();
       setProjectSaveSuccess(true);
       setTimeout(() => setProjectSaveSuccess(false), 3000);
@@ -109,17 +112,15 @@ export default function Settings() {
     }
     setTestSlackStatus("testing");
     try {
-      await fetch(slackWebhook, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: `🟢 *CloudOps Test Notification* from workspace *${activeProject?.name || "Production"}*\nSlack alert integration is active and operating properly!`,
-        }),
+      await testProjectWebhook({
+        type: "slack",
+        url: slackWebhook.trim(),
       });
       setTestSlackStatus("success");
     } catch (err) {
+      console.error("Slack test ping failed:", err);
       setTestSlackStatus("error");
+      alert(err.response?.data?.message || "Failed to deliver Slack test notification. Please check that your Webhook URL is valid.");
     } finally {
       setTimeout(() => setTestSlackStatus(null), 4000);
     }
@@ -132,17 +133,15 @@ export default function Settings() {
     }
     setTestDiscordStatus("testing");
     try {
-      await fetch(discordWebhook, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `🟢 **CloudOps Test Notification** from workspace **${activeProject?.name || "Production"}**\nDiscord alert integration is active and operating properly!`,
-        }),
+      await testProjectWebhook({
+        type: "discord",
+        url: discordWebhook.trim(),
       });
       setTestDiscordStatus("success");
     } catch (err) {
+      console.error("Discord test ping failed:", err);
       setTestDiscordStatus("error");
+      alert(err.response?.data?.message || "Failed to deliver Discord test notification. Please check that your Webhook URL is valid.");
     } finally {
       setTimeout(() => setTestDiscordStatus(null), 4000);
     }

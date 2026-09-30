@@ -1,6 +1,8 @@
 const k8s = require("@kubernetes/client-node");
 const logger = require("../config/logger");
 const socketService = require("./socket.service");
+const alertRepository = require("../repositories/alert.repository");
+const notificationService = require("./notification.service");
 
 let isK8sConnected = false;
 let k8sCoreApi = null;
@@ -455,6 +457,33 @@ const simulatePodState = async (podName, newStatus) => {
       message: `Back-off restarting failed container '${pod.containers?.[0]?.name || "api"}' in pod '${pod.name}'`,
       time: new Date().toISOString(),
     });
+
+    try {
+      const title = `Kubernetes Pod Crash: ${pod.name}`;
+      const desc = `Pod '${pod.name}' entered CrashLoopBackOff. Readiness check failed (0/1 Ready). Restarts: ${pod.restarts}. Node: ${pod.node || "kind-control-plane"}`;
+      
+      const alert = await alertRepository.createAlert(1, title, "critical");
+
+      socketService.emitAlertFiring({
+        id: alert?.id || Date.now(),
+        service_id: 1,
+        service_name: pod.name,
+        title,
+        severity: "critical",
+        description: desc,
+        created_at: new Date().toISOString(),
+      });
+
+      // Dispatch Webhook Notification to Slack & Discord
+      await notificationService.sendWebhookNotification(
+        null,
+        `🚨 Pod Failure: ${pod.name}`,
+        desc,
+        "critical"
+      );
+    } catch (e) {
+      logger.warn({ err: e.message }, "Failed to trigger pod crash alert or notification");
+    }
   } else if (newStatus === "Running") {
     pod.ready = "1/1";
     clusterState.events.unshift({
@@ -464,6 +493,17 @@ const simulatePodState = async (podName, newStatus) => {
       message: `Container '${pod.containers?.[0]?.name || "api"}' started and passed readiness probe`,
       time: new Date().toISOString(),
     });
+
+    try {
+      await notificationService.sendWebhookNotification(
+        null,
+        `🟢 Pod Recovered: ${pod.name}`,
+        `Pod '${pod.name}' container restarted successfully and passed readiness probe (1/1 Ready).`,
+        "info"
+      );
+    } catch (e) {
+      logger.warn({ err: e.message }, "Failed to send pod recovery notification");
+    }
   }
 
   logger.info({ pod: pod.name, status: newStatus }, "Simulated pod status updated");

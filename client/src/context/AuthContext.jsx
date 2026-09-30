@@ -72,10 +72,18 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.get("/projects");
       if (res.data?.data) {
-        setProjects(res.data.data);
-        localStorage.setItem("cloudops_projects", JSON.stringify(res.data.data));
-        if (!activeProject && res.data.data.length > 0) {
-          setActiveProject(res.data.data[0]);
+        const list = res.data.data;
+        setProjects(list);
+        localStorage.setItem("cloudops_projects", JSON.stringify(list));
+        if (activeProject) {
+          const currentUpdated = list.find((p) => p.id === activeProject.id);
+          if (currentUpdated) {
+            setActiveProject(currentUpdated);
+          } else if (list.length > 0) {
+            setActiveProject(list[0]);
+          }
+        } else if (list.length > 0) {
+          setActiveProject(list[0]);
         }
       }
     } catch (err) {
@@ -94,10 +102,18 @@ export function AuthProvider({ children }) {
             localStorage.setItem("cloudops_user", JSON.stringify(res.data.user));
           }
           if (res.data?.projects) {
-            setProjects(res.data.projects);
-            localStorage.setItem("cloudops_projects", JSON.stringify(res.data.projects));
-            if (!activeProject && res.data.projects.length > 0) {
-              setActiveProject(res.data.projects[0]);
+            const list = res.data.projects;
+            setProjects(list);
+            localStorage.setItem("cloudops_projects", JSON.stringify(list));
+            if (activeProject) {
+              const currentUpdated = list.find((p) => p.id === activeProject.id);
+              if (currentUpdated) {
+                setActiveProject(currentUpdated);
+              } else if (list.length > 0) {
+                setActiveProject(list[0]);
+              }
+            } else if (list.length > 0) {
+              setActiveProject(list[0]);
             }
           }
         } catch (err) {

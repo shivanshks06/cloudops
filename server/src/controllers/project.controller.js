@@ -137,10 +137,66 @@ const deleteProject = async (req, res) => {
   }
 };
 
+const axios = require("axios");
+
+const testWebhook = async (req, res) => {
+  try {
+    const { type, url } = req.body;
+    if (!url || !url.trim()) {
+      return res.status(400).json({ success: false, message: "Webhook URL is required" });
+    }
+
+    const targetUrl = url.trim();
+    if (type === "slack") {
+      const payload = {
+        attachments: [
+          {
+            color: "#10B981",
+            title: "🟢 [CloudOps] Slack Webhook Test Succeeded",
+            text: "Your Slack alert integration with CloudOps is working perfectly! Real-time alerts and incident notifications will be delivered here.",
+            fields: [
+              { title: "Status", value: "Verified & Connected", short: true },
+              { title: "Timestamp", value: new Date().toISOString(), short: false },
+            ],
+            footer: "CloudOps Multi-Tenant Real-Time Engine",
+          },
+        ],
+      };
+      await axios.post(targetUrl, payload, { timeout: 6000 });
+      return res.status(200).json({ success: true, message: "Slack test notification delivered successfully!" });
+    } else if (type === "discord") {
+      const payload = {
+        embeds: [
+          {
+            title: "🟢 [CloudOps] Discord Webhook Test Succeeded",
+            description: "Your Discord alert integration with CloudOps is working perfectly! Real-time alerts and incident notifications will be delivered here.",
+            color: 1099684,
+            fields: [
+              { name: "Status", value: "Verified & Connected", inline: true },
+            ],
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+      await axios.post(targetUrl, payload, { timeout: 6000 });
+      return res.status(200).json({ success: true, message: "Discord test notification delivered successfully!" });
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid webhook type. Use 'slack' or 'discord'." });
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, "Webhook test ping failed");
+    return res.status(400).json({
+      success: false,
+      message: `Failed to deliver webhook: ${err.response?.data?.message || err.response?.data || err.message}`,
+    });
+  }
+};
+
 module.exports = {
   getProjects,
   createProject,
   getProject,
   updateProject,
   deleteProject,
+  testWebhook,
 };

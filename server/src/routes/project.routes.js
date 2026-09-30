@@ -5,6 +5,7 @@ const {
   getProject,
   updateProject,
   deleteProject,
+  testWebhook,
 } = require("../controllers/project.controller");
 const { authenticateToken } = require("../middleware/auth.middleware");
 
@@ -12,6 +13,7 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
+router.post("/test-webhook", testWebhook);
 router.get("/", getProjects);
 router.post("/", createProject);
 router.get("/:id", getProject);
