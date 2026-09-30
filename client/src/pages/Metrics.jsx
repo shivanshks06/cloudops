@@ -14,6 +14,7 @@ import UptimeTrendChart from "../components/charts/UptimeTrendChart";
 import GrafanaPanel from "../components/GrafanaPanel";
 import ConnectTelemetryModal from "../components/modals/ConnectTelemetryModal";
 import GrafanaConnectionModal from "../components/modals/GrafanaConnectionModal";
+import GeoLatencyHeatmap from "../components/charts/GeoLatencyHeatmap";
 
 export default function Metrics() {
   const [stats, setStats] = useState(null);
@@ -275,6 +276,11 @@ export default function Metrics() {
             onOpenGrafana={() => setIsGrafanaModalOpen(true)}
           />
         </div>
+      </div>
+
+      {/* Global Multi-Region Edge Latency & Network Waterfall */}
+      <div className="mt-8">
+        <GeoLatencyHeatmap serviceId={1} endpointUrl="http://localhost:5000/health" />
       </div>
 
       {/* Connect OpenTelemetry Guide Modal */}

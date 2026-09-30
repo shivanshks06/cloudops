@@ -24,6 +24,7 @@ import {
   Rocket
 } from "lucide-react";
 import { getIncident, getIncidentEvents, acknowledgeIncident, resolveIncident } from "../services/api";
+import AICopilotCard from "../components/common/AICopilotCard";
 
 export default function IncidentDetails() {
   const { id } = useParams();
@@ -327,6 +328,9 @@ export default function IncidentDetails() {
           </Link>
         </div>
       )}
+
+      {/* AI Incident Copilot Root Cause & 1-Click Remediation */}
+      <AICopilotCard incidentId={id} onRemediationExecuted={loadData} />
 
       {/* SRE Observability Links Hub */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

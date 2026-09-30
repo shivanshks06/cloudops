@@ -1,6 +1,7 @@
 const incidentRepository = require("../repositories/incident.repository");
 const incidentEventRepository = require("../repositories/incidentEvent.repository");
 const incidentService = require("../services/incident.service");
+const aiCopilotService = require("../services/aiCopilot.service");
 
 const getIncidents = async (req, res) => {
   try {
@@ -121,6 +122,41 @@ const getMetrics = async (req, res) => {
   }
 };
 
+const getAIDiagnosis = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const diagnosis = await aiCopilotService.diagnoseIncident(id);
+    return res.status(200).json({
+      success: true,
+      data: diagnosis,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "AI Incident diagnosis failed",
+      details: error.message,
+    });
+  }
+};
+
+const executeRemediation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { actionId, payload } = req.body;
+    const result = await aiCopilotService.executeRemediation(id, actionId, payload);
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "Remediation action failed to execute",
+      details: error.message,
+    });
+  }
+};
+
 module.exports = {
   getIncidents,
   getIncidentById,
@@ -128,4 +164,6 @@ module.exports = {
   acknowledgeIncident,
   resolveIncident,
   getMetrics,
+  getAIDiagnosis,
+  executeRemediation,
 };

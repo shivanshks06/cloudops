@@ -68,6 +68,24 @@ export const updateAlertRule = (id, data) => api.put(`/alert-rules/${id}`, data)
 export const deleteAlertRule = (id) => api.delete(`/alert-rules/${id}`);
 export const toggleAlertRule = (id) => api.patch(`/alert-rules/${id}/toggle`);
 
+// AI Incident Copilot
+export const getAIDiagnosis = (id) => api.get(`/incidents/${id}/ai-diagnose`);
+export const executeRemediation = (id, data) => api.post(`/incidents/${id}/ai-remediate`, data);
+
+// Public Status Page
+export const getPublicStatus = (slug = "system") => api.get(`/public/status/${slug}`);
+export const subscribeStatusUpdates = (data) => api.post("/public/subscribe", data);
+
+// SSL / TLS Security Audit
+export const getSSLCheck = (id) => api.get(`/services/${id}/ssl-check`);
+export const scanSSLHost = (data) => api.post("/services/ssl-scan", data);
+
+// Global Multi-Region Latency Probing
+export const getGeoLatency = (id, params = {}) => api.get(`/services/${id}/geo-latency`, { params });
+
+// Distributed Log Stream & Query Explorer
+export const getLogs = (params = {}) => api.get("/logs", { params });
+
 export const testProbeService = (data) => api.post("/services/test-probe", data);
 
 export default api;

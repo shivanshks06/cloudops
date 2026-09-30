@@ -28,9 +28,19 @@ const metricRoutes = require("./routes/metric.routes");
 const alertmanagerRoutes = require("./routes/alertmanager.routes");
 const deploymentRoutes = require("./routes/deployment.routes");
 const kubernetesRoutes = require("./routes/kubernetes.routes");
+const publicRoutes = require("./routes/public.routes");
+const logRoutes = require("./routes/log.routes");
 
 app.use(cors());
 app.use(express.json());
+
+// Public Unauthenticated Status Page routes
+app.use("/api/v1/public", publicRoutes);
+app.use("/api/public", publicRoutes);
+
+// Log stream routes
+app.use("/api/v1/logs", logRoutes);
+app.use("/api/logs", logRoutes);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/auth", authRoutes);

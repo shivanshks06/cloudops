@@ -10,6 +10,9 @@ import {
   Settings,
   Rocket,
   Layers,
+  Terminal,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { getAlerts, getIncidents } from "../../services/api";
 import { useSocketEvent } from "../../services/socket";
@@ -19,6 +22,7 @@ const links = [
   { name: "Services", path: "/services", icon: Server },
   { name: "Deployments", path: "/deployments", icon: Rocket },
   { name: "Incidents", path: "/incidents", icon: AlertTriangle, key: "incidents" },
+  { name: "Logs Explorer", path: "/logs", icon: Terminal },
   { name: "Kubernetes", path: "/kubernetes", icon: Layers },
   { name: "Metrics", path: "/metrics", icon: Activity },
   { name: "Alerts", path: "/alerts", icon: Bell, key: "alerts" },
@@ -122,9 +126,24 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto px-2 py-4 border-t border-slate-900 flex flex-col gap-1">
-        <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500">System v1.0.0</p>
-        <p className="text-[10px] text-slate-600">© 2026 CloudOps Inc.</p>
+      <div className="mt-auto px-2 py-4 border-t border-slate-900 flex flex-col gap-2">
+        <a
+          href="/status"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 transition cursor-pointer group"
+        >
+          <div className="flex items-center gap-2">
+            <Globe size={14} className="text-cyan-400 group-hover:rotate-12 transition" />
+            <span>Public Status Page</span>
+          </div>
+          <ExternalLink size={12} className="text-cyan-400/80" />
+        </a>
+
+        <div className="flex flex-col gap-0.5 px-1 pt-1">
+          <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500">System v1.0.0</p>
+          <p className="text-[10px] text-slate-600">© 2026 CloudOps Inc.</p>
+        </div>
       </div>
     </aside>
   );

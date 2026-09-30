@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Server, Activity, Clock, ShieldAlert, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { getService, getServiceIncidents } from "../services/api";
 import ResponseTimeChart from "../components/charts/ResponseTimeChart";
+import SSLCertificateCard from "../components/common/SSLCertificateCard";
+import GeoLatencyHeatmap from "../components/charts/GeoLatencyHeatmap";
 
 export default function ServiceDetails() {
   const { id } = useParams();
@@ -70,7 +72,7 @@ export default function ServiceDetails() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-800/60 border border-slate-700/50 p-6 rounded-2xl">
         <div className="flex items-center gap-4">
@@ -136,6 +138,12 @@ export default function ServiceDetails() {
           </div>
         </div>
       </div>
+
+      {/* SSL / TLS Certificate Security Tracker */}
+      <SSLCertificateCard serviceId={service.id} endpointUrl={service.endpoint_url} />
+
+      {/* Global Multi-Region Latency & Waterfall Probe */}
+      <GeoLatencyHeatmap serviceId={service.id} endpointUrl={service.endpoint_url} />
 
       {/* Telemetry Chart */}
       <div className="bg-slate-800/60 border border-slate-700/50 p-6 rounded-2xl">

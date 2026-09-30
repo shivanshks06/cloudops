@@ -148,6 +148,8 @@ const getServiceIncidents = async (req, res) => {
 };
 
 const axios = require("axios");
+const sslService = require("../services/ssl.service");
+const geoProbeService = require("../services/geoProbe.service");
 
 const testProbe = async (req, res) => {
   const {
@@ -224,6 +226,70 @@ const testProbe = async (req, res) => {
   }
 };
 
+const getServiceSSLCheck = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = await serviceService.getServiceById(id);
+    if (!service) {
+      return res.status(404).json({ success: false, message: "Service not found" });
+    }
+
+    const sslData = await sslService.checkSSL(service.endpoint_url || "cloudops.dev");
+    return res.status(200).json({
+      success: true,
+      data: sslData,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to perform SSL audit",
+      error: error.message,
+    });
+  }
+};
+
+const scanSSLHost = async (req, res) => {
+  try {
+    const { target, host } = req.body;
+    const targetHost = target || host;
+    if (!targetHost) {
+      return res.status(400).json({ success: false, message: "Domain or hostname is required" });
+    }
+
+    const sslData = await sslService.checkSSL(targetHost);
+    return res.status(200).json({
+      success: true,
+      data: sslData,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "SSL host audit scan failed",
+      error: error.message,
+    });
+  }
+};
+
+const getServiceGeoLatency = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = await serviceService.getServiceById(id);
+    const endpoint = service ? service.endpoint_url : (req.query.url || "http://localhost:5000/health");
+
+    const probeResult = await geoProbeService.probeService(endpoint);
+    return res.status(200).json({
+      success: true,
+      data: probeResult,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to probe multi-region geo latency",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getServices,
   getService,
@@ -232,4 +298,7 @@ module.exports = {
   deleteService,
   getServiceIncidents,
   testProbe,
+  getServiceSSLCheck,
+  scanSSLHost,
+  getServiceGeoLatency,
 };

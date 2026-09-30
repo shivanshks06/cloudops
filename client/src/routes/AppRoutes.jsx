@@ -17,6 +17,8 @@ import PodDetails from "../pages/PodDetails";
 import Settings from "../pages/Settings";
 import ServiceDetails from "../pages/ServiceDetails";
 import IncidentDetails from "../pages/IncidentDetails";
+import Logs from "../pages/Logs";
+import PublicStatusPage from "../pages/PublicStatusPage";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 
@@ -55,6 +57,10 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Standalone Status Portal (No authentication required) */}
+        <Route path="/status" element={<PublicStatusPage />} />
+        <Route path="/status/:slug" element={<PublicStatusPage />} />
+
         {/* Public Authentication Pages (Full screen, no sidebar) */}
         <Route
           path="/login"
@@ -90,6 +96,7 @@ export default function AppRoutes() {
                   <Route path="/metrics" element={<Metrics />} />
                   <Route path="/incidents" element={<Incidents />} />
                   <Route path="/incidents/:id" element={<IncidentDetails />} />
+                  <Route path="/logs" element={<Logs />} />
                   <Route path="/alerts" element={<Alerts />} />
                   <Route path="/alert-rules" element={<AlertRules />} />
                   <Route path="/settings" element={<Settings />} />

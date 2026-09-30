@@ -424,6 +424,15 @@ export default function Incidents() {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Link
+                          to={`/incidents/${incident.id}`}
+                          className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1.5"
+                          title="AI Copilot Root Cause Diagnosis"
+                        >
+                          <Sparkles size={12} className="text-cyan-400" />
+                          <span>AI Copilot</span>
+                        </Link>
+
                         {incident.status === "open" && (
                           <button
                             onClick={(e) => handleQuickAcknowledge(e, incident.id)}

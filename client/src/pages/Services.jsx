@@ -13,6 +13,8 @@ import {
   Activity,
   Send,
   Sparkles,
+  Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AddMonitorModal from "../components/forms/AddMonitorModal";
@@ -143,13 +145,25 @@ export default function Services() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 transition duration-200 cursor-pointer w-fit"
-        >
-          <Plus size={16} />
-          Add Monitor
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <a
+            href="/status"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 text-cyan-400 border border-cyan-500/30 px-4 py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer shadow-sm"
+          >
+            <Globe size={14} />
+            Public Status Page <ExternalLink size={12} />
+          </a>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 transition duration-200 cursor-pointer w-fit"
+          >
+            <Plus size={16} />
+            Add Monitor
+          </button>
+        </div>
       </div>
 
       {/* Filter Tabs */}

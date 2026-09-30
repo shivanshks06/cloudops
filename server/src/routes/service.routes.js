@@ -7,6 +7,9 @@ const {
   deleteService,
   getServiceIncidents,
   testProbe,
+  getServiceSSLCheck,
+  scanSSLHost,
+  getServiceGeoLatency,
 } = require("../controllers/service.controller");
 
 const { optionalAuth, requireProject } = require("../middleware/auth.middleware");
@@ -26,9 +29,12 @@ router.get("/flaky", (req, res) => {
   }
   res.status(200).json({ status: "Healthy" });
 });
+router.post("/test-probe", testProbe);
+router.post("/ssl-scan", scanSSLHost);
+router.get("/:id/ssl-check", getServiceSSLCheck);
+router.get("/:id/geo-latency", getServiceGeoLatency);
 router.get("/:id", getService);
 router.get("/:id/incidents", getServiceIncidents);
-router.post("/test-probe", testProbe);
 router.post("/", createService);
 router.post("/reset", resetData);
 router.delete("/:id", deleteService);
