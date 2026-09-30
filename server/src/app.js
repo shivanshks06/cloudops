@@ -64,9 +64,9 @@ app.get("/", (req, res) => {
 
 const healthRoutes = require("./routes/health.routes");
 const { register } = require("./config/prometheus");
+const pool = require("./config/database");
 const serviceRepository = require("./repositories/service.repository");
 const alertRepository = require("./repositories/alert.repository");
-const incidentRepository = require("./repositories/incident.repository");
 const { totalServices, activeAlerts, activeIncidents } = require("./config/customMetrics");
 
 app.use("/health", healthRoutes);
@@ -74,15 +74,22 @@ app.use("/health", healthRoutes);
 app.get("/metrics", async (req, res) => {
     try {
         try {
-            const [services, alerts, incidents] = await Promise.all([
-                serviceRepository.getAllServices ? serviceRepository.getAllServices().catch(() => []) : Promise.resolve([]),
-                alertRepository.getActiveAlerts ? alertRepository.getActiveAlerts().catch(() => []) : Promise.resolve([]),
-                incidentRepository.getOpenIncidents ? incidentRepository.getOpenIncidents().catch(() => []) : Promise.resolve([]),
+            const [services, activeAlertCount, incidentRes] = await Promise.all([
+                serviceRepository.findAll().catch(() => []),
+                alertRepository.countActiveAlerts().catch(() => 0),
+                pool.query("SELECT COUNT(*) FROM incidents WHERE status IN ('open', 'acknowledged')").catch(() => ({ rows: [{ count: 0 }] })),
             ]);
-            if (Array.isArray(services)) totalServices.set(services.length);
-            if (Array.isArray(alerts)) activeAlerts.set(alerts.length);
-            if (Array.isArray(incidents)) activeIncidents.set(incidents.length);
-        } catch {}
+            
+            const totalCount = Array.isArray(services) ? services.length : 0;
+            const alertsCount = typeof activeAlertCount === "number" ? activeAlertCount : 0;
+            const incidentsCount = incidentRes.rows?.[0]?.count ? parseInt(incidentRes.rows[0].count, 10) : 0;
+
+            totalServices.set(totalCount);
+            activeAlerts.set(alertsCount);
+            activeIncidents.set(incidentsCount);
+        } catch (err) {
+            console.error("Error setting metrics:", err);
+        }
 
         res.set("Content-Type", register.contentType);
         res.end(await register.metrics());
