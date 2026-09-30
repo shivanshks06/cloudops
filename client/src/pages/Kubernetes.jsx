@@ -33,6 +33,8 @@ import {
 import { useSocketEvent } from "../services/socket";
 import LiveIndicator from "../components/common/LiveIndicator";
 
+import ConnectClusterModal from "../components/modals/ConnectClusterModal";
+
 export default function Kubernetes() {
   const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
@@ -45,6 +47,8 @@ export default function Kubernetes() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pods");
   const [actionLoading, setActionLoading] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+
 
   const loadData = useCallback(async (isSilent = false) => {
     try {
@@ -176,15 +180,45 @@ export default function Kubernetes() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsConnectModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition cursor-pointer"
+          >
+            <Boxes size={15} /> Connect Cluster
+          </button>
           <LiveIndicator />
           <button
             onClick={() => loadData()}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition cursor-pointer"
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
           </button>
         </div>
       </div>
+
+      {/* Cluster Connection Info Banner */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
+            <Layers size={18} />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-white block">
+              Cluster Mode: <span className="text-emerald-400 font-mono">Interactive Live Telemetry & Sandbox</span>
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Inspecting pods, deployments & auto-scalers. Need to connect your AWS EKS / GKE / Cloud cluster?
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsConnectModalOpen(true)}
+          className="text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3.5 py-1.5 rounded-xl border border-blue-500/20 transition cursor-pointer shrink-0"
+        >
+          View Connection Guide →
+        </button>
+      </div>
+
 
       {/* Cluster Overview KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -615,6 +649,13 @@ export default function Kubernetes() {
           </div>
         )}
       </div>
+
+      {/* Connect Cluster Modal */}
+      <ConnectClusterModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+      />
     </div>
   );
 }
+

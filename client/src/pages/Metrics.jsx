@@ -11,12 +11,16 @@ import ResponseTimeChart from "../components/charts/ResponseTimeChart";
 import HealthDonutChart from "../components/charts/HealthDonutChart";
 import UptimeTrendChart from "../components/charts/UptimeTrendChart";
 import GrafanaPanel from "../components/GrafanaPanel";
+import ConnectTelemetryModal from "../components/modals/ConnectTelemetryModal";
+import { Activity } from "lucide-react";
 
 export default function Metrics() {
   const [stats, setStats] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [timeRange, setTimeRange] = useState("1h");
+  const [isOTelModalOpen, setIsOTelModalOpen] = useState(false);
+
 
   const loadMetrics = async () => {
     setIsRefreshing(true);
@@ -114,8 +118,14 @@ export default function Metrics() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => window.open("http://localhost:3001", "_blank")}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-orange-500/20"
+              onClick={() => setIsOTelModalOpen(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-amber-500/20 cursor-pointer"
+            >
+              <Activity size={13} /> Connect OpenTelemetry
+            </button>
+            <button
+              onClick={() => window.open("http://localhost:3002", "_blank")}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-lg shadow-orange-500/20 cursor-pointer"
             >
               Open Grafana
             </button>
@@ -131,6 +141,7 @@ export default function Metrics() {
               <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
             </button>
           </div>
+
         </div>
       </div>
 
@@ -210,12 +221,15 @@ export default function Metrics() {
             url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=3"
           />
 
-          <GrafanaPanel
-            title="Response Time"
-            url="http://localhost:3001/d-solo/adj2xlj/total-services?timezone=browser&orgId=1&panelId=4"
-          />
         </div>
       </div>
+
+      {/* Connect OpenTelemetry Guide Modal */}
+      <ConnectTelemetryModal
+        isOpen={isOTelModalOpen}
+        onClose={() => setIsOTelModalOpen(false)}
+      />
     </div>
   );
 }
+

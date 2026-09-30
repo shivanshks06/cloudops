@@ -25,6 +25,8 @@ import { getDeployments, createDeployment, rollbackDeployment, getServices } fro
 import { useSocketEvent } from "../services/socket";
 import LiveIndicator from "../components/common/LiveIndicator";
 
+import ConnectCICDModal from "../components/modals/ConnectCICDModal";
+
 export default function Deployments() {
   const navigate = useNavigate();
   const [deployments, setDeployments] = useState([]);
@@ -44,7 +46,9 @@ export default function Deployments() {
   const [envFilter, setEnvFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showTriggerModal, setShowTriggerModal] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+
 
   // New Deployment Form State
   const [formData, setFormData] = useState({
@@ -243,21 +247,28 @@ export default function Deployments() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsConnectModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 transition cursor-pointer"
+          >
+            <Rocket size={14} /> Connect CI/CD Pipeline
+          </button>
           <LiveIndicator />
           <button
             onClick={() => loadData()}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition cursor-pointer"
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
           </button>
           <button
             onClick={() => setShowTriggerModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/25 transition cursor-pointer"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/25 transition cursor-pointer"
           >
-            <Plus size={16} /> Trigger Deployment
+            <Plus size={15} /> + New Deployment
           </button>
         </div>
       </div>
+
 
       {/* DORA Engineering KPI Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -589,6 +600,13 @@ export default function Deployments() {
           </div>
         </div>
       )}
+
+      {/* Connect CI/CD Pipeline Guide Modal */}
+      <ConnectCICDModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+      />
     </div>
   );
 }
+
