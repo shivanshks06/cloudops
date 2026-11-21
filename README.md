@@ -261,5 +261,4 @@ npm run down
 
 ---
 
-## 📜 License
-This project is open-source software licensed under the [MIT License](LICENSE).
+WA72ZZ
